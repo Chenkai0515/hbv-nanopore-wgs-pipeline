@@ -2,6 +2,10 @@
 
 A comprehensive bioinformatics pipeline for **Hepatitis B Virus (HBV)** whole-genome sequencing analysis using Oxford Nanopore long-read data.
 
+- End-to-end HBV Nanopore WGS pipeline from raw FASTQ to unified-coordinate variants
+- Fully reproducible: conda environments + YAML config + single entry script
+- HBV-specific algorithmic components: rotated reference system, host tail trimming, dual-variant-caller integration
+
 ## Overview
 
 ```
@@ -9,15 +13,15 @@ A comprehensive bioinformatics pipeline for **Hepatitis B Virus (HBV)** whole-ge
 │                        HBV Nanopore WGS Pipeline                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Raw FASTQ ──► QC & Filtering ──► Host Deconv ──► Mapping ──► Consensus    │
+│  Raw FASTQ ──► QC & Filtering ──► Host Deconv ──► Mapping ──► Consensus     │
 │                    │                  │              │            │         │
-│               ┌────┴────┐        ┌────┴────┐    ┌───┴───┐   ┌────┴────┐   │
-│               │ Dorado  │        │ Minimap2│    │Medaka │   │ Variant │   │
-│               │ Porechop│        │ SeqKit  │    │ R1+R2 │   │ Calling │   │
-│               │ FastQC  │        │ Masking │    │       │   │iVar+Clair3│ │
-│               └─────────┘        └─────────┘    └───────┘   └─────────┘   │
+│               ┌────┴────┐        ┌────┴────┐    ┌───┴───┐   ┌────┴────┐     │
+│               │ Dorado  │        │ Minimap2│    │Medaka │   │ Variant │     │
+│               │ Porechop│        │ SeqKit  │    │ R1+R2 │   │ Calling │     │
+│               │ FastQC  │        │ Masking │    │       │   │iVar+Clair3│   │
+│               └─────────┘        └─────────┘    └───────┘   └─────────┘     │
 │                                                                             │
-│  Output: High-quality consensus sequences + Annotated variant calls        │
+│  Output: High-quality consensus sequences + Annotated variant calls         │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,7 +46,7 @@ A comprehensive bioinformatics pipeline for **Hepatitis B Virus (HBV)** whole-ge
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline.git
+git clone https://github.com/Chenkai0515/hbv-nanopore-wgs-pipeline.git
 cd hbv-nanopore-wgs-pipeline
 
 # Create conda environments (choose modules as needed)
@@ -171,7 +175,7 @@ If you use this pipeline in your research, please cite:
 ```
 Jiang, C. (2025). HBV Nanopore WGS Pipeline: A comprehensive workflow for 
 hepatitis B virus whole-genome sequencing analysis. GitHub repository: 
-https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline
+https://github.com/Chenkai0515/hbv-nanopore-wgs-pipeline
 ```
 
 See [CITATION.cff](CITATION.cff) for machine-readable citation information.
@@ -192,5 +196,5 @@ For questions and issues, please open a GitHub Issue or contact the author.
 
 **Author**: Chenkai Jiang  
 **Version**: 1.0.0  
-**Last Updated**: December 2025
 
+This repository is currently under active development.
