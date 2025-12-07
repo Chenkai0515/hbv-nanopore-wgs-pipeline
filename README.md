@@ -15,11 +15,11 @@ A comprehensive bioinformatics pipeline for **Hepatitis B Virus (HBV)** whole-ge
 │                                                                             │
 │  Raw FASTQ ──► QC & Filtering ──► Host Deconv ──► Mapping ──► Consensus     │
 │                    │                  │              │            │         │
-│               ┌────┴────┐        ┌────┴────┐    ┌───┴───┐   ┌────┴────┐     │
-│               │ Dorado  │        │ Minimap2│    │Medaka │   │ Variant │     │
-│               │ Porechop│        │ SeqKit  │    │ R1+R2 │   │ Calling │     │
+│               ┌────┴────┐        ┌────┴────┐    ┌────┴──┐   ┌─────┴─────┐   │
+│               │ Dorado  │        │ Minimap2│    │Medaka │   │ Variant   │   │
+│               │ Porechop│        │ SeqKit  │    │ R1+R2 │   │ Calling   │   │
 │               │ FastQC  │        │ Masking │    │       │   │iVar+Clair3│   │
-│               └─────────┘        └─────────┘    └───────┘   └─────────┘     │
+│               └─────────┘        └─────────┘    └───────┘   └───────────┘   │
 │                                                                             │
 │  Output: High-quality consensus sequences + Annotated variant calls         │
 └─────────────────────────────────────────────────────────────────────────────┘
