@@ -2,13 +2,17 @@
 # 6.4_paf_partition_ids.py
 import sys, argparse, gzip
 
+
 def gzopen(path, mode="rt"):
     if path.endswith(".gz"):
         return gzip.open(path, mode)
     return open(path, mode)
 
+
 def main():
-    ap = argparse.ArgumentParser(description="Emit host read IDs based on PAF thresholds (reads vs human).")
+    ap = argparse.ArgumentParser(
+        description="Emit host read IDs based on PAF thresholds (reads vs human)."
+    )
     ap.add_argument("--paf", required=True, help="PAF (reads vs human). .gz ok")
     ap.add_argument("--out-host-ids", required=True, help="Output file of host read IDs")
     ap.add_argument("--min-mapq", type=int, default=20)
@@ -19,18 +23,19 @@ def main():
     ap.add_argument("--min-total-frac", type=float, default=0.05)
     args = ap.parse_args()
 
-    totals = {}   # qname -> (qlen, total_aln_bases)
+    totals = {}  # qname -> (qlen, total_aln_bases)
     with gzopen(args.paf, "rt") as f:
         for line in f:
-            if not line or line[0] == "#": 
+            if not line or line[0] == "#":
                 continue
             p = line.rstrip("\n").split("\t")
             if len(p) < 12:
                 continue
             qname = p[0]
-            qlen  = int(p[1])
-            qs    = int(p[2]); qe = int(p[3])
-            mapq  = int(p[11])
+            qlen = int(p[1])
+            qs = int(p[2])
+            qe = int(p[3])
+            mapq = int(p[11])
             try:
                 block_len = int(p[10])
             except Exception:
@@ -55,7 +60,7 @@ def main():
             if pid is None:
                 pid = 0.0
             aln_q = max(0, qe - qs)
-            if mapq < args.min_mapq: 
+            if mapq < args.min_mapq:
                 continue
             if aln_q < args.min_match_len:
                 continue
@@ -75,6 +80,7 @@ def main():
             host += 1
     out.close()
     sys.stderr.write(f"[paf_partition_ids] host_ids={host}\n")
+
 
 if __name__ == "__main__":
     main()
