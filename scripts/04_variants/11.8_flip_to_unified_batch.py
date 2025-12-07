@@ -71,11 +71,13 @@ import pandas as pd
 import numpy as np
 
 # ========== PATH CONFIGURATION ==========
-# Working directory
-WORK_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+# Working directory (can be set via HBV_WORK_DIR environment variable)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+WORK_DIR = os.environ.get("HBV_WORK_DIR", os.path.join(PROJECT_DIR, "variants_call_10"))
 
 # View A directory (consensus vs unified reference)
-DEFAULT_A_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/consensus_ref_viewa_9"
+DEFAULT_A_DIR = os.environ.get("HBV_VIEW_A_DIR", os.path.join(PROJECT_DIR, "consensus_ref_viewa_9"))
 
 # View B directory (combined variants)
 B_DIR = os.path.join(WORK_DIR, "variants", "combined")

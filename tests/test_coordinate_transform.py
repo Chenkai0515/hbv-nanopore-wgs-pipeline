@@ -7,53 +7,16 @@ These tests verify the coordinate transformation between:
 - Original/standard coordinates (used in databases)
 """
 
+import sys
+from pathlib import Path
+
 import pytest
 
+# Add scripts directory to path for imports
+scripts_dir = Path(__file__).parent.parent / "scripts"
+sys.path.insert(0, str(scripts_dir))
 
-# ============================================================================
-# Coordinate Transformation Functions (to be imported from scripts)
-# ============================================================================
-
-def rotated_to_original(rotated_pos: int, offset: int = 1823, 
-                        genome_length: int = 3221) -> int:
-    """
-    Convert rotated reference position to original (standard) position.
-    
-    Formula: original_pos = ((rotated_pos - 1) + offset) % genome_length + 1
-    
-    Args:
-        rotated_pos: Position in rotated reference (1-based)
-        offset: Rotation offset (default: 1823)
-        genome_length: Total genome length (default: 3221)
-    
-    Returns:
-        Position in original reference (1-based)
-    """
-    if rotated_pos < 1 or rotated_pos > genome_length:
-        raise ValueError(f"Position {rotated_pos} out of range [1, {genome_length}]")
-    
-    original = ((rotated_pos - 1) + offset) % genome_length + 1
-    return original
-
-
-def original_to_rotated(original_pos: int, offset: int = 1823,
-                        genome_length: int = 3221) -> int:
-    """
-    Convert original (standard) position to rotated reference position.
-    
-    Args:
-        original_pos: Position in original reference (1-based)
-        offset: Rotation offset (default: 1823)
-        genome_length: Total genome length (default: 3221)
-    
-    Returns:
-        Position in rotated reference (1-based)
-    """
-    if original_pos < 1 or original_pos > genome_length:
-        raise ValueError(f"Position {original_pos} out of range [1, {genome_length}]")
-    
-    rotated = ((original_pos - 1) - offset) % genome_length + 1
-    return rotated
+from hbvpipe.coordinates import rotated_to_original, original_to_rotated
 
 
 # ============================================================================

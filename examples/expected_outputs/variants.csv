@@ -1,0 +1,17 @@
+# Expected variant output format
+# This shows the unified variant table format from Step 11
+# Columns: sample_id, chrom, pos, ref, alt, var_type, AF_primary, DP_primary, tier, decision
+sample_id	chrom	pos	ref	alt	var_type	struct_len	AF_primary	DP_primary	AF_clair3	DP_clair3	AD_clair3	AF_ivar	DP_ivar	AD_ivar	source_label	tier	decision	reason	file_source
+10893	A_X02763	20	A	G	SNP	1	1.0		1.0			1.0			FLIPPED	SNP-FLIPPED	KEEP	R!=C_and_viewB_missing__AF_major_set_to_1.0	flipped_from_consensus
+10893	A_X02763	53	C	T	SNP	1	1.0		1.0			1.0			FLIPPED	SNP-FLIPPED	KEEP	R!=C_and_viewB_missing__AF_major_set_to_1.0	flipped_from_consensus
+10893	A_X02763	166	C	A	SNP	1	0.0596	1628.0				0.0596	1628.0	97.0	IVAR_ONLY_KEEP	SNP-MC	KEEP		accepted
+10893	A_X02763	894	A	C	SNP	1	0.0603	1708.0				0.0603	1708.0	103.0	IVAR_ONLY_KEEP	SNP-MC	KEEP		accepted
+10893	A_X02763	1741	TG	T	DEL	1	0.0819	1587.0				0.0819	1587.0	130.0	IVAR_ONLY_KEEP	INDEL-MC	KEEP	strand_fail_but_covered	accepted
+# ... additional variants omitted for brevity
+# Tier definitions:
+#   SNP-HC: High confidence SNP (AF >= 20%)
+#   SNP-MC: Medium confidence SNP (AF >= 5%)
+#   SNP-LF: Low frequency SNP (AF >= 1%)
+#   INDEL-MC: Medium confidence indel
+#   SNP-FLIPPED: Consensus differs from reference (AF=1.0)
+

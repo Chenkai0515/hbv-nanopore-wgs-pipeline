@@ -102,12 +102,14 @@ def reference_sequence():
 
 ## Continuous Integration
 
-Tests are run automatically on:
-- Push to main branch
-- Pull requests
-- Release tags
+Tests are run automatically via GitHub Actions on:
+- Push to main or develop branch
+- Pull requests to main
 
-See `.github/workflows/test.yml` for CI configuration.
+See `.github/workflows/ci.yml` for CI configuration.
+
+Note: CI only runs pure Python tests (coordinate transforms, config parsing).
+Heavy integration tests requiring bioinformatics tools should be run locally.
 
 ## Test Data
 

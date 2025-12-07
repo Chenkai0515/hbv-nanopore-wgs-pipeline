@@ -10,8 +10,8 @@ authors:
     email: cjiang31@jhu.edu
     affiliation: Johns Hopkins University
     orcid: ''
-repository-code: 'https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline'
-url: 'https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline'
+repository-code: 'https://github.com/Chenkai0515/hbv-nanopore-wgs-pipeline'
+url: 'https://github.com/Chenkai0515/hbv-nanopore-wgs-pipeline'
 abstract: >-
   A comprehensive bioinformatics pipeline for Hepatitis B
   Virus (HBV) whole-genome sequencing analysis using Oxford
@@ -38,5 +38,5 @@ preferred-citation:
     - given-names: Chenkai
       family-names: Jiang
   year: 2025
-  url: 'https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline'
+  url: 'https://github.com/Chenkai0515/hbv-nanopore-wgs-pipeline'
 

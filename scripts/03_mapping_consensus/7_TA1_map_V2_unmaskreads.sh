@@ -7,11 +7,14 @@
 set -euo pipefail
 
 ############################
-# User paths (from prompt) #
+# User paths (configurable via environment variables)
 ############################
-SAMPLES_DIR="/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/host_deconv_out_5"
-OUT_DIR="/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/TA1_map_6_V2"
-REF="/Users/jck/Desktop/ref/gold/reordered_1824_3221_reference_A2763.fasta"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$(dirname "$SCRIPT_DIR")")}"
+
+SAMPLES_DIR="${FASTQ_DIR:-${PROJECT_DIR}/host_deconv_out_5}"
+OUT_DIR="${BAMS_DIR:-${PROJECT_DIR}/TA1_map_6_V2}"
+REF="${REF:-${HBV_REF:-EDIT_THIS_PATH/reordered_1824_3221_reference.fasta}}"
 
 ###################################
 # Performance / resource settings #

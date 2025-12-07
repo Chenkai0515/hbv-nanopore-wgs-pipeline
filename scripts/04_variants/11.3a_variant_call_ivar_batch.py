@@ -61,11 +61,13 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ========== PATH CONFIGURATION ==========
-# Working directory
-WORK_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+# Working directory (can be set via HBV_WORK_DIR environment variable)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+WORK_DIR = os.environ.get("HBV_WORK_DIR", os.path.join(PROJECT_DIR, "variants_call_10"))
 
-# Consensus sequences directory
-CONSENSUS_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/Medaka_consensus_8/r2"
+# Consensus sequences directory (can be set via CONSENSUS_DIR environment variable)
+CONSENSUS_DIR = os.environ.get("CONSENSUS_DIR", os.path.join(PROJECT_DIR, "Medaka_consensus_8", "r2"))
 
 # BAM files directory (from filtering step)
 BAM_DIR = os.path.join(WORK_DIR, "filtering")

@@ -1,108 +1,59 @@
 # Expected Outputs
 
-This directory contains reference outputs for validating pipeline results.
+This directory contains example output files to help verify your pipeline runs correctly.
 
-## Purpose
+## Files
 
-Use these expected outputs to:
-1. Verify your installation is working correctly
-2. Validate results after code changes
-3. Debug issues by comparing to known-good outputs
+| File | Step | Description |
+|------|------|-------------|
+| `qc_stats.tsv` | 4 | SeqKit statistics for the mini dataset |
+| `consensus.fasta` | 9 | Truncated consensus sequence (~500bp shown) |
+| `variants.csv` | 11 | Example variant table with annotations |
 
-## Expected Metrics
+## How to Verify
 
-### QC Statistics
-
-After running the QC module, expect approximately:
-
-| Sample | Input Reads | After Filter | % Retained |
-|--------|-------------|--------------|------------|
-| 10090 | ~1000 | ~800-900 | 80-90% |
-| 10893 | ~1000 | ~800-900 | 80-90% |
-| ... | ... | ... | ... |
-
-### Host Decontamination
-
-| Sample | Viral Enriched | Host Only | % Viral |
-|--------|----------------|-----------|---------|
-| 10090 | ~600-800 | ~100-200 | 60-80% |
-| 10893 | ~600-800 | ~100-200 | 60-80% |
-| ... | ... | ... | ... |
-
-### Coverage
-
-| Sample | Mean Depth | % ≥10× | % ≥100× |
-|--------|------------|--------|---------|
-| 10090 | ~500× | >99% | >95% |
-| 10893 | ~500× | >99% | >95% |
-| ... | ... | ... | ... |
-
-### Variants Detected
-
-| Sample | Total Variants | HC | MC | LF |
-|--------|----------------|----|----|-----|
-| 10090 | 0-2 | 0 | 0-1 | 0-1 |
-| 10893 | 3-8 | 1-3 | 1-3 | 1-2 |
-| 21024 | 0-2 | 0 | 0-1 | 0-1 |
-| 23146 | 0-2 | 0 | 0-1 | 0-1 |
-| 33117 | 0-2 | 0 | 0-1 | 0-1 |
-| 40154 | 3-8 | 1-3 | 1-3 | 1-2 |
-| 40625 | 3-8 | 1-3 | 1-3 | 1-2 |
-| 40750 | 3-8 | 1-3 | 1-3 | 1-2 |
-
-## Reference Files
-
-When full validation data is available, this directory will contain:
-
-```
-expected_outputs/
-├── qc_summary.tsv           # Expected QC metrics
-├── host_deconv_summary.tsv  # Expected host decontamination metrics
-├── coverage_summary.tsv     # Expected coverage statistics
-└── variants_summary.tsv     # Expected variant counts per sample
-```
-
-## Validation Script
-
-Use this script to compare your results to expected outputs:
+After running the pipeline, compare your outputs:
 
 ```bash
-#!/bin/bash
-# validate_outputs.sh
+# Check QC stats
+diff examples/expected_outputs/qc_stats.tsv \
+     examples/mini_dataset/work/multi_tool_qc_4/seqkit/seqkit_stats.tsv
 
-RESULTS_DIR="$1"
-EXPECTED_DIR="examples/expected_outputs"
+# Check consensus exists and has correct length
+seqkit stats examples/mini_dataset/work/Medaka_consensus_8/r2/10090/consensus.fasta
 
-echo "Comparing outputs..."
-
-# Compare QC summary
-if [ -f "$EXPECTED_DIR/qc_summary.tsv" ]; then
-    diff <(sort "$RESULTS_DIR/qc/summary.tsv") \
-         <(sort "$EXPECTED_DIR/qc_summary.tsv") && \
-    echo "QC: PASS" || echo "QC: DIFFERS"
-fi
-
-# Compare variant counts
-if [ -f "$EXPECTED_DIR/variants_summary.tsv" ]; then
-    diff <(sort "$RESULTS_DIR/variants/summary_counts.tsv") \
-         <(sort "$EXPECTED_DIR/variants_summary.tsv") && \
-    echo "Variants: PASS" || echo "Variants: DIFFERS"
-fi
-
-echo "Validation complete."
+# Check variant output format
+head examples/mini_dataset/work/variants_call_10/variants/unified/*.tsv
 ```
 
 ## Notes
 
-- Expected values are approximate due to:
-  - Stochastic elements in some algorithms
-  - Minor version differences in tools
-  - Platform-specific floating-point variations
+- Exact values may vary slightly between software versions
+- The consensus sequence should be ~3221 bp (HBV genome length)
+- Variant calls depend on read quality and coverage
+- Some steps (5, 6) require external databases and may be skipped
 
-- Results within ±10% of expected values are generally acceptable
+## Output Format Details
 
-- For exact reproducibility:
-  - Use the same tool versions
-  - Set random seeds where available
-  - Use identical reference files
+### QC Stats (SeqKit)
 
+Key columns:
+- `num_seqs`: Number of reads after filtering
+- `avg_len`: Average read length (expect ~3100-3200 for HBV)
+- `AvgQual`: Mean quality score (expect >20 for good data)
+- `GC(%)`: GC content (HBV is typically ~48-49%)
+
+### Consensus FASTA
+
+- Header includes reference ID and sample ID
+- Sequence length should match HBV genome (~3221 bp)
+- Positions with low coverage will be 'N'
+
+### Variant Table
+
+Key columns:
+- `pos`: Position in unified reference coordinates
+- `ref`/`alt`: Reference and alternate alleles
+- `AF_primary`: Allele frequency (0-1)
+- `tier`: Confidence tier (HC/MC/LF for SNPs, INDEL-* for indels)
+- `decision`: KEEP or CANDIDATE based on filtering rules

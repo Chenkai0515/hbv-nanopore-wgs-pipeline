@@ -61,8 +61,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 
 # ========== PATH CONFIGURATION ==========
-# Working directory
-WORK_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+# Working directory (can be set via HBV_WORK_DIR environment variable)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+WORK_DIR = os.environ.get("HBV_WORK_DIR", os.path.join(PROJECT_DIR, "variants_call_10"))
 
 # Paths
 INPUT_DIR = os.path.join(WORK_DIR, "variants", "filtered")

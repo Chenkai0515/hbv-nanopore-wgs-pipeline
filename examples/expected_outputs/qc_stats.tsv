@@ -1,0 +1,6 @@
+# Expected QC Statistics for mini dataset sample 10090
+# This file shows the expected output format from SeqKit stats (Step 4)
+# Actual values may vary slightly based on software version
+file	format	type	num_seqs	sum_len	min_len	avg_len	max_len	Q1	Q2	Q3	sum_gap	N50	N50_num	Q20(%)	Q30(%)	AvgQual	GC(%)	sum_n
+10090_subsampled.trimmed_filtered.porechop.fastq.gz	FASTQ	DNA	971	3050052	1950	3141.1	3648	3101	3114	3205	0	3175	72	93	85	21.68	48.74	0
+

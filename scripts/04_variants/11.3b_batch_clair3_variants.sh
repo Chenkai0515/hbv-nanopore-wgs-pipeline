@@ -25,11 +25,15 @@ set -euo pipefail
 #       rm r1041_e82_400bps_sup_v500.tar.gz
 
 # ========= PATH CONFIGURATION =========
-# Working directory
-WORK_DIR="/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+# Get script directory for relative paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-# Consensus sequences directory
-CONSENSUS_DIR="/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/Medaka_consensus_8/r2"
+# Working directory (can be set via HBV_WORK_DIR environment variable)
+WORK_DIR="${HBV_WORK_DIR:-${PROJECT_DIR}/variants_call_10}"
+
+# Consensus sequences directory (can be set via CONSENSUS_DIR environment variable)
+CONSENSUS_DIR="${CONSENSUS_DIR:-${PROJECT_DIR}/Medaka_consensus_8/r2}"
 
 # Filtering directory (BAM files)
 FILTERING_DIR="${WORK_DIR}/filtering"
@@ -39,8 +43,8 @@ OUTPUT_DIR="${WORK_DIR}/variants/clair3"
 REPORT_DIR="${OUTPUT_DIR}/reports"
 # ========================================
 
-# Clair3 Configuration
-CLAIR3_PATH="/Users/jck/Desktop/variants-call/Clair3"
+# Clair3 Configuration (set CLAIR3_PATH if Clair3 is not in PATH)
+CLAIR3_PATH="${CLAIR3_PATH:-}"
 # Note: Model path should be set according to your conda environment
 # Typical path: /path/to/conda/envs/Clair3/bin/models/r1041_e82_400bps_sup_v500
 # Please update MODEL_DIR to match your installation

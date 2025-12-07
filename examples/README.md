@@ -1,146 +1,163 @@
-# Examples
+# Example Data and Configuration
 
-This directory contains example configuration files and a mini dataset for testing the pipeline.
+This directory contains a minimal example dataset to demonstrate the pipeline.
+
+## Quick Start (for Reviewers)
+
+You can test the pipeline in **~10-20 minutes** using the included mini dataset:
+
+```bash
+# 1. Check the pipeline without running (dry-run)
+./run_pipeline.sh examples/example_config.yaml --sample 10090 --dry-run
+
+# 2. Run QC steps only (steps 1-4, no external databases needed)
+./run_pipeline.sh examples/example_config.yaml --sample 10090 --from 1 --to 4
+```
 
 ## Contents
 
 ```
 examples/
-├── README.md                    # This file
-├── example_config.yaml          # Complete configuration example
-├── samplesheet.csv              # Example sample sheet
-├── mini_dataset/                # Subsampled test data (8 samples)
-│   └── README.md                # Instructions for obtaining test data
-└── expected_outputs/            # Reference outputs for validation
-    └── README.md                # Expected output descriptions
-```
-
-## Quick Start
-
-### 1. Set Up Configuration
-
-```bash
-# Copy example config to project config
-cp examples/example_config.yaml config/config.yaml
-
-# Edit with your paths
-vim config/config.yaml
-```
-
-### 2. Prepare Sample Sheet
-
-```bash
-# Copy example sample sheet
-cp examples/samplesheet.csv config/samplesheet.csv
-
-# Edit with your samples
-vim config/samplesheet.csv
-```
-
-### 3. Run Pipeline
-
-```bash
-# Single sample test
-./run_pipeline.sh config/config.yaml --sample 10090
-
-# Batch processing
-./run_pipeline.sh config/config.yaml --batch config/samplesheet.csv
+├── example_config.yaml     # Pre-configured config for mini dataset
+├── samplesheet.csv         # Sample sheet for batch processing
+├── README.md               # This file
+├── mini_dataset/
+│   ├── raw_fastq/          # Sample FASTQ (10090_subsampled.fastq)
+│   └── README.md           # Dataset description
+└── expected_outputs/
+    ├── qc_stats.tsv        # Expected QC statistics
+    ├── consensus.fasta     # Expected consensus sequence (truncated)
+    └── variants.csv        # Expected variant calls
 ```
 
 ## Mini Dataset
 
-The `mini_dataset/` directory is designed to hold subsampled FASTQ files for testing. 
+The mini dataset includes a **subsampled** HBV sequencing run:
 
-### Test Samples
+| Sample | Reads | Size | Description |
+|--------|-------|------|-------------|
+| 10090  | ~2000 | ~7MB | Subsampled from full ONT run |
 
-| Sample ID | Description |
-|-----------|-------------|
-| 10090 | Control sample |
-| 10893 | Treatment sample with variants |
-| 21024 | Standard sample |
-| 23146 | Standard sample |
-| 33117 | Standard sample |
-| 40154 | Validation sample with variants |
-| 40625 | Sample with variants |
-| 40750 | Sample with variants |
+This sample has been subsampled to enable quick testing while preserving realistic data characteristics.
 
-### Obtaining Test Data
+## Running the Pipeline
 
-See `mini_dataset/README.md` for instructions on:
-- Downloading pre-subsampled data
-- Creating your own subsampled dataset
-- Expected file sizes and read counts
+### Prerequisites
 
-## Example Configuration
+1. **Create conda environments** (one-time setup):
+   ```bash
+   make env-qc        # For steps 1-5
+   make env-medaka    # For steps 9-10
+   make env-variants  # For step 11
+   ```
 
-The `example_config.yaml` file provides a complete configuration template with:
+2. **Edit configuration** (update reference paths):
+   ```bash
+   # Edit examples/example_config.yaml
+   # Update paths marked with EDIT_THIS_PATH
+   ```
 
-- All path settings
-- Default parameter values
-- Comments explaining each option
+### Run Options
 
-Key sections:
-- `project`: Working directories
-- `reference`: Reference genomes
-- `databases`: Kraken2, Clair3 models
-- `resources`: Thread counts, memory
-- `qc/host_deconv/mapping/variants`: Module-specific parameters
+```bash
+# Dry-run (show what would execute)
+./run_pipeline.sh examples/example_config.yaml --sample 10090 --dry-run
 
-## Sample Sheet Format
+# Run QC only (no external references needed)
+./run_pipeline.sh examples/example_config.yaml --sample 10090 --from 1 --to 4
 
-The `samplesheet.csv` file format:
+# Run full pipeline (requires all references)
+./run_pipeline.sh examples/example_config.yaml --sample 10090
 
-```csv
-sample_id,fastq_path,barcode,genotype,notes
-10090,/path/to/10090.fastq.gz,barcode01,B,Control
-10893,/path/to/10893.fastq.gz,barcode02,C,
+# Run specific step
+./run_pipeline.sh examples/example_config.yaml --sample 10090 --step 2
 ```
 
-Required columns:
-- `sample_id`: Unique sample identifier
-- `fastq_path`: Path to input FASTQ file
+### Expected Runtime
 
-Optional columns:
-- `barcode`: Sequencing barcode
-- `genotype`: HBV genotype (A-H)
-- `notes`: Any additional notes
+| Steps | Description | Time (4 threads) |
+|-------|-------------|------------------|
+| 1-4   | QC pipeline | ~5 minutes |
+| 5     | Kraken2 | ~2 minutes |
+| 6     | Host deconv | ~3 minutes |
+| 7-8   | Mapping | ~2 minutes |
+| 9     | Medaka | ~10 minutes |
+| 10    | Comparison | ~1 minute |
+| 11    | Variants | ~5 minutes |
+
+**Total**: ~30 minutes with all steps
 
 ## Expected Outputs
 
-The `expected_outputs/` directory contains reference results for validation:
+After running the full pipeline, you should see:
 
-- QC statistics
-- Coverage metrics
-- Variant counts
+```
+examples/mini_dataset/work/
+├── fastq_dorado/               # Step 1: Trimmed FASTQ
+├── fastq_filter_2/             # Step 2: Filtered FASTQ
+├── fastq_porechop_3/           # Step 3: Porechop output
+├── multi_tool_qc_4/            # Step 4-5: QC reports
+├── host_deconv_out_5/          # Step 6: Decontaminated reads
+├── TA1_map_6_V2/               # Step 7: BAM files
+├── TA2_depth_7/                # Step 8: Coverage analysis
+├── Medaka_consensus_8/         # Step 9: Consensus sequences
+├── consensus_ref_viewa_9/      # Step 10: Comparison results
+├── variants_call_10/           # Step 11: Variant calls
+│   └── variants/unified/       # Final variant results
+└── logs/                       # Pipeline logs
+```
 
-Use these to verify your installation and identify any issues.
+## Sample Sheet Format
+
+For batch processing, use `samplesheet.csv`:
+
+```csv
+sample_id,fastq_path
+10090,examples/mini_dataset/raw_fastq/10090_subsampled.fastq
+```
+
+Run with:
+```bash
+./run_pipeline.sh examples/example_config.yaml --batch examples/samplesheet.csv
+```
+
+## Verifying Results
+
+Compare your outputs with `expected_outputs/`:
+
+```bash
+# Check QC stats match
+diff -y examples/mini_dataset/work/multi_tool_qc_4/seqkit/seqkit_stats.tsv \
+       examples/expected_outputs/qc_stats.tsv
+
+# Check consensus generated
+head examples/mini_dataset/work/Medaka_consensus_8/r2/10090/consensus.fasta
+```
 
 ## Troubleshooting
 
-### Config file not found
+### Missing references
+
+If you don't have all reference files, run only the steps that don't require them:
+
 ```bash
-# Ensure you're in the pipeline root directory
-cd /path/to/hbv-nanopore-wgs-pipeline
-ls config/config.yaml
+# Steps 1-4 don't need external references
+./run_pipeline.sh examples/example_config.yaml --sample 10090 --from 1 --to 4
 ```
 
-### Sample not found
-```bash
-# Verify sample ID matches samplesheet
-grep "SAMPLE_ID" config/samplesheet.csv
+### Conda environment issues
 
-# Check FASTQ path exists
-ls -la /path/to/sample.fastq.gz
+```bash
+# Check available environments
+conda info --envs
+
+# Create missing environment
+mamba env create -f environment/env_qc.yml
 ```
 
-### Memory issues
+### Log files
+
+Check logs for detailed error messages:
 ```bash
-# Reduce thread count in config
-resources:
-  threads: 8  # Reduce from default 16
+cat examples/mini_dataset/work/logs/pipeline_10090_*.log
 ```
-
-## Contact
-
-For questions about examples or test data, please open a GitHub Issue.
-
