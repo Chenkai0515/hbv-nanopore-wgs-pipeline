@@ -30,11 +30,13 @@ MAX_LENGTH = 4000
 MIN_QSCORE = 17.0
 
 
-def filter_single_file(in_fastq_gz_path: str,
-                       out_fastq_gz_path: str,
-                       min_len: int = MIN_LENGTH,
-                       max_len: int = MAX_LENGTH,
-                       min_q: float = MIN_QSCORE) -> None:
+def filter_single_file(
+    in_fastq_gz_path: str,
+    out_fastq_gz_path: str,
+    min_len: int = MIN_LENGTH,
+    max_len: int = MAX_LENGTH,
+    min_q: float = MIN_QSCORE,
+) -> None:
     """Filter a single FASTQ.gz file by length and quality."""
     try:
         out_dir = os.path.dirname(out_fastq_gz_path)
@@ -44,8 +46,11 @@ def filter_single_file(in_fastq_gz_path: str,
         total_reads = 0
         passed_reads = 0
 
-        with gzip.open(in_fastq_gz_path, mode="rt", encoding="ascii", errors="strict") as fin, \
-             gzip.open(out_fastq_gz_path, mode="wt", encoding="ascii", compresslevel=1) as fout:
+        with gzip.open(
+            in_fastq_gz_path, mode="rt", encoding="ascii", errors="strict"
+        ) as fin, gzip.open(
+            out_fastq_gz_path, mode="wt", encoding="ascii", compresslevel=1
+        ) as fout:
             while True:
                 header = fin.readline()
                 if not header:
@@ -79,7 +84,9 @@ def filter_single_file(in_fastq_gz_path: str,
                     fout.write(f"{header}\n{sequence}\n{plus_line}\n{quality}\n")
                     passed_reads += 1
 
-        print(f"[{os.path.basename(in_fastq_gz_path)}] Total: {total_reads}, Passed: {passed_reads}")
+        print(
+            f"[{os.path.basename(in_fastq_gz_path)}] Total: {total_reads}, Passed: {passed_reads}"
+        )
     except Exception as exc:
         print(f"[SKIP] {in_fastq_gz_path} -> {type(exc).__name__}: {exc}")
 
@@ -129,7 +136,9 @@ def collect_file_pairs(root_dir: str, output_root_dir: str) -> List[Tuple[str, s
                 continue
 
             rel_dir = os.path.relpath(dirpath, root_dir)
-            target_dir = os.path.join(output_root_dir, rel_dir) if rel_dir != "." else output_root_dir
+            target_dir = (
+                os.path.join(output_root_dir, rel_dir) if rel_dir != "." else output_root_dir
+            )
             out_filename = filename[:-9] + "_filtered.fastq.gz"
             out_path = os.path.join(target_dir, out_filename)
             pairs.append((in_path, out_path))
@@ -142,9 +151,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", "-o", default=OUTPUT_DIR, help="Output directory")
     parser.add_argument("--min-len", type=int, default=MIN_LENGTH, help="Minimum read length")
     parser.add_argument("--max-len", type=int, default=MAX_LENGTH, help="Maximum read length")
-    parser.add_argument("--min-quality", type=float, default=MIN_QSCORE, help="Minimum mean Q score")
-    parser.add_argument("--only-missing", action="store_true", help="Only process missing/invalid outputs")
-    parser.add_argument("--workers", type=int, default=0, help="Number of parallel workers (0=auto)")
+    parser.add_argument(
+        "--min-quality", type=float, default=MIN_QSCORE, help="Minimum mean Q score"
+    )
+    parser.add_argument(
+        "--only-missing", action="store_true", help="Only process missing/invalid outputs"
+    )
+    parser.add_argument(
+        "--workers", type=int, default=0, help="Number of parallel workers (0=auto)"
+    )
     return parser.parse_args()
 
 
@@ -152,7 +167,7 @@ def main():
     args = parse_args()
     input_dir = args.input
     output_dir = args.output
-    
+
     file_pairs = collect_file_pairs(input_dir, output_dir)
     if not file_pairs:
         print(f"No .fastq.gz files found in {input_dir}")
@@ -172,13 +187,20 @@ def main():
 
     available_cpus = mp.cpu_count()
     requested_workers = args.workers if args.workers > 0 else None
-    num_workers = min(available_cpus, len(file_pairs)) if requested_workers is None else min(requested_workers, len(file_pairs))
+    num_workers = (
+        min(available_cpus, len(file_pairs))
+        if requested_workers is None
+        else min(requested_workers, len(file_pairs))
+    )
     print(f"CPU cores: {available_cpus}, using {num_workers} workers")
 
     with mp.Pool(processes=num_workers) as pool:
         results = []
         for in_path, out_path in file_pairs:
-            r = pool.apply_async(filter_single_file, args=(in_path, out_path, args.min_len, args.max_len, args.min_quality))
+            r = pool.apply_async(
+                filter_single_file,
+                args=(in_path, out_path, args.min_len, args.max_len, args.min_quality),
+            )
             results.append(r)
         for r in results:
             r.get()

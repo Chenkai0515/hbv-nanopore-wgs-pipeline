@@ -34,7 +34,7 @@ __author__ = "Chenkai Jiang"
 __all__ = [
     # Coordinates
     "rotated_to_original",
-    "original_to_rotated", 
+    "original_to_rotated",
     "transform_positions",
     "HBV_GENOME_LENGTH",
     "HBV_ROTATION_OFFSET",
@@ -48,4 +48,3 @@ __all__ = [
     "build_blacklist",
     "merge_variant_calls",
 ]
-

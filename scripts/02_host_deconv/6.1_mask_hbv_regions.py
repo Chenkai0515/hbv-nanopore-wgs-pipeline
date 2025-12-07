@@ -8,6 +8,7 @@ This prevents HBV sequences from being incorrectly classified as human.
 import sys, gzip, argparse
 from collections import defaultdict
 
+
 def read_paf_intervals(paf_path, min_mapq=20, merge_distance=10, min_match_len=0):
     """
     Parse PAF and return {read_id: [(start, end), ...]} in query coordinates.
@@ -18,7 +19,7 @@ def read_paf_intervals(paf_path, min_mapq=20, merge_distance=10, min_match_len=0
     _open = gzip.open if paf_path.endswith(".gz") else open
     with _open(paf_path, "rt") as f:
         for line in f:
-            if not line.strip() or line.startswith('#'):
+            if not line.strip() or line.startswith("#"):
                 continue
             parts = line.rstrip("\n").split("\t")
             if len(parts) < 12:
@@ -55,6 +56,7 @@ def read_paf_intervals(paf_path, min_mapq=20, merge_distance=10, min_match_len=0
         merged[rid] = [(s, e) for s, e in out]
     return merged
 
+
 def mask_fastq(fq_in, fq_out, iv_dict):
     """
     Mask intervals in FASTQ with 'N'. Quality scores are preserved.
@@ -85,8 +87,8 @@ def mask_fastq(fq_in, fq_out, iv_dict):
                     e0 = max(0, min(len(s_list), e))
                     if e0 > s0:
                         for i in range(s0, e0):
-                            s_list[i] = 'N'
-                        masked_bases += (e0 - s0)
+                            s_list[i] = "N"
+                        masked_bases += e0 - s0
                 seq = "".join(s_list)
                 masked_reads += 1
 
@@ -95,20 +97,28 @@ def mask_fastq(fq_in, fq_out, iv_dict):
             fout.write(plus)
             fout.write(qual + "\n")
 
-    sys.stderr.write(f"[mask_hbv_regions] total_reads={total_reads}, masked_reads={masked_reads}, masked_bases={masked_bases}\n")
+    sys.stderr.write(
+        f"[mask_hbv_regions] total_reads={total_reads}, masked_reads={masked_reads}, masked_bases={masked_bases}\n"
+    )
+
 
 def main():
-    ap = argparse.ArgumentParser(description="Mask HBV-matching regions in FASTQ using PAF alignments.")
+    ap = argparse.ArgumentParser(
+        description="Mask HBV-matching regions in FASTQ using PAF alignments."
+    )
     ap.add_argument("--paf", required=True, help="PAF file from minimap2 (reads vs HBV panel)")
     ap.add_argument("--fastq", required=True, help="Input FASTQ(.gz)")
     ap.add_argument("--out", required=True, help="Output masked FASTQ(.gz)")
     ap.add_argument("--min-mapq", type=int, default=20, help="Minimum mapping quality")
-    ap.add_argument("--merge-distance", type=int, default=10, help="Merge intervals within this distance")
+    ap.add_argument(
+        "--merge-distance", type=int, default=10, help="Merge intervals within this distance"
+    )
     ap.add_argument("--min-match-len", type=int, default=0, help="Minimum alignment length")
     args = ap.parse_args()
 
     ivs = read_paf_intervals(args.paf, args.min_mapq, args.merge_distance, args.min_match_len)
     mask_fastq(args.fastq, args.out, ivs)
+
 
 if __name__ == "__main__":
     main()

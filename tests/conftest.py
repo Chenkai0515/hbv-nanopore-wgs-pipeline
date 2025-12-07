@@ -12,6 +12,7 @@ from pathlib import Path
 # Path Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def project_root():
     """Return the project root directory."""
@@ -34,6 +35,7 @@ def temp_dir():
 # ============================================================================
 # Reference Data Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def hbv_genome_length():
@@ -60,6 +62,7 @@ def sample_reference_sequence():
 # ============================================================================
 # FASTQ Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_fastq_content():
@@ -88,6 +91,7 @@ def sample_fastq_file(temp_dir, sample_fastq_content):
 # Variant Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def sample_variant_dict():
     """Provide a sample variant dictionary."""
@@ -98,7 +102,7 @@ def sample_variant_dict():
         "af": 0.25,
         "depth": 500,
         "source": "DUAL",
-        "tier": "HC"
+        "tier": "HC",
     }
 
 
@@ -115,6 +119,7 @@ consensus	200	G	C	450	225	36	50	25	32	0.1	500	0.01	TRUE
 # ============================================================================
 # Coordinate Transformation Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def coordinate_test_cases(hbv_genome_length, rotation_offset):
@@ -133,21 +138,25 @@ def coordinate_test_cases(hbv_genome_length, rotation_offset):
 # Helper Functions
 # ============================================================================
 
+
 @pytest.fixture
 def create_test_bam(temp_dir):
     """Factory fixture to create test BAM files."""
+
     def _create_bam(name="test.bam"):
         # This would create a minimal BAM file for testing
         # For now, just create an empty file
         bam_path = temp_dir / name
         bam_path.touch()
         return bam_path
+
     return _create_bam
 
 
 # ============================================================================
 # Configuration Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_config():
@@ -156,25 +165,17 @@ def sample_config():
         "project": {
             "work_dir": "/tmp/test_project",
             "raw_fastq_dir": "/tmp/test_fastq",
-            "results_dir": "/tmp/test_results"
+            "results_dir": "/tmp/test_results",
         },
         "reference": {
             "hbv_unified": "/path/to/reference.fasta",
             "human_ref": "/path/to/human.fa.gz",
             "hbv_genome_length": 3221,
-            "hbv_rotation_offset": 1823
+            "hbv_rotation_offset": 1823,
         },
-        "resources": {
-            "threads": 4,
-            "java_memory_gb": 4
-        },
+        "resources": {"threads": 4, "java_memory_gb": 4},
         "variants": {
             "filter_profile": "balanced",
-            "tiers": {
-                "hc_min_af": 0.20,
-                "mc_min_af": 0.05,
-                "lf_min_af": 0.01
-            }
-        }
+            "tiers": {"hc_min_af": 0.20, "mc_min_af": 0.05, "lf_min_af": 0.01},
+        },
     }
-

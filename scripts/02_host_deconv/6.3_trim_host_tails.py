@@ -3,12 +3,16 @@
 import sys, argparse, gzip
 from typing import List, Tuple, Dict
 
+
 def gzopen(path, mode="rt"):
     if path.endswith(".gz"):
         return gzip.open(path, mode)
     return open(path, mode)
 
-def parse_paf(paf_path: str, min_mapq: int, min_match_len: int, min_frac: float, min_pid: float) -> Dict[str, List[Tuple[int,int,int]]]:
+
+def parse_paf(
+    paf_path: str, min_mapq: int, min_match_len: int, min_frac: float, min_pid: float
+) -> Dict[str, List[Tuple[int, int, int]]]:
     hits = {}
     with gzopen(paf_path, "rt") as f:
         for line in f:
@@ -18,10 +22,10 @@ def parse_paf(paf_path: str, min_mapq: int, min_match_len: int, min_frac: float,
             if len(parts) < 12:
                 continue
             qname = parts[0]
-            qlen  = int(parts[1])
-            qs    = int(parts[2])
-            qe    = int(parts[3])
-            mapq  = int(parts[11])
+            qlen = int(parts[1])
+            qs = int(parts[2])
+            qe = int(parts[3])
+            mapq = int(parts[11])
             try:
                 block_len = int(parts[10])
             except Exception:
@@ -57,7 +61,8 @@ def parse_paf(paf_path: str, min_mapq: int, min_match_len: int, min_frac: float,
             hits.setdefault(qname, []).append((qs, qe, qlen))
     return hits
 
-def merge_intervals(ints: List[Tuple[int,int]], merge_dist: int) -> List[Tuple[int,int]]:
+
+def merge_intervals(ints: List[Tuple[int, int]], merge_dist: int) -> List[Tuple[int, int]]:
     if not ints:
         return []
     ints = sorted(ints, key=lambda x: (x[0], x[1]))
@@ -65,21 +70,32 @@ def merge_intervals(ints: List[Tuple[int,int]], merge_dist: int) -> List[Tuple[i
     cs, ce = ints[0]
     for s, e in ints[1:]:
         if s <= ce + merge_dist:
-            if e > ce: ce = e
+            if e > ce:
+                ce = e
         else:
             out.append((cs, ce))
             cs, ce = s, e
     out.append((cs, ce))
     return out
 
-def classify_and_clip(qlen: int, hit_qints: List[Tuple[int,int]], tail_near_end: int, tail_max_len: int, tail_max_frac: float, merge_dist: int, min_keep_len: int, discard_internal: bool):
+
+def classify_and_clip(
+    qlen: int,
+    hit_qints: List[Tuple[int, int]],
+    tail_near_end: int,
+    tail_max_len: int,
+    tail_max_frac: float,
+    merge_dist: int,
+    min_keep_len: int,
+    discard_internal: bool,
+):
     if not hit_qints:
         return True, 0, 0, "no_trusted_human_hits"
     merged = merge_intervals(hit_qints, merge_dist=merge_dist)
     left_ints, right_ints, internal = [], [], []
     for s, e in merged:
-        left = (s <= tail_near_end)
-        right = ((qlen - e) <= tail_near_end)
+        left = s <= tail_near_end
+        right = (qlen - e) <= tail_near_end
         if left and not right:
             left_ints.append((s, e))
         elif right and not left:
@@ -106,7 +122,13 @@ def classify_and_clip(qlen: int, hit_qints: List[Tuple[int,int]], tail_near_end:
     kept_len = qlen - trim_left - trim_right
     if kept_len < min_keep_len:
         return False, 0, 0, "kept_len_below_min"
-    return True, trim_left, trim_right, ("tails_clipped" if (trim_left or trim_right) else "kept_unchanged")
+    return (
+        True,
+        trim_left,
+        trim_right,
+        ("tails_clipped" if (trim_left or trim_right) else "kept_unchanged"),
+    )
+
 
 def iter_fastq(fh):
     while True:
@@ -120,8 +142,11 @@ def iter_fastq(fh):
             return
         yield name.rstrip("\n"), seq.rstrip("\n"), plus.rstrip("\n"), qual.rstrip("\n")
 
+
 def main():
-    ap = argparse.ArgumentParser(description="Trim human tails from Nanopore reads using PAF (human).")
+    ap = argparse.ArgumentParser(
+        description="Trim human tails from Nanopore reads using PAF (human)."
+    )
     ap.add_argument("--paf", required=True, help="PAF (human). .gz ok")
     ap.add_argument("--fastq", required=True, help="Original UNMASKED FASTQ(.gz)")
     ap.add_argument("--out-viral", required=True, help="Output viral_enriched.unmasked.fastq.gz")
@@ -142,29 +167,36 @@ def main():
     total = kept = trimmed = host_only = trimmed_bp = 0
     reasons = {}
 
-    with gzopen(args.fastq, "rt") as fin, gzip.open(args.out_viral, "wt") as fv, gzip.open(args.out_host, "wt") as fh:
+    with gzopen(args.fastq, "rt") as fin, gzip.open(args.out_viral, "wt") as fv, gzip.open(
+        args.out_host, "wt"
+    ) as fh:
         for name, seq, plus, qual in iter_fastq(fin):
             total += 1
             rid = name[1:].split()[0]
             qlen = len(seq)
             qints = [(s, e) for (s, e, L) in hits.get(rid, [])]
             keep, tl, tr, why = classify_and_clip(
-                qlen, qints,
-                args.tail_near_end, args.tail_max_len, args.tail_max_frac,
-                args.merge_distance, args.min_keep_len, bool(args.discard_internal)
+                qlen,
+                qints,
+                args.tail_near_end,
+                args.tail_max_len,
+                args.tail_max_frac,
+                args.merge_distance,
+                args.min_keep_len,
+                bool(args.discard_internal),
             )
             reasons[why] = reasons.get(why, 0) + 1
             if keep:
                 if tl or tr:
-                    new_seq = seq[tl: qlen - tr]
-                    new_qual = qual[tl: qlen - tr]
+                    new_seq = seq[tl : qlen - tr]
+                    new_qual = qual[tl : qlen - tr]
                     new_name = f"{name.rstrip()} clip=L{tl},R{tr}\n"
                     fv.write(new_name)
                     fv.write(new_seq + "\n")
                     fv.write(plus + "\n")
                     fv.write(new_qual + "\n")
                     trimmed += 1
-                    trimmed_bp += (tl + tr)
+                    trimmed_bp += tl + tr
                 else:
                     fv.write(name if name.endswith("\n") else name + "\n")
                     fv.write(seq if seq.endswith("\n") else seq + "\n")
@@ -178,11 +210,15 @@ def main():
                 fh.write(qual if qual.endswith("\n") else qual + "\n")
                 host_only += 1
 
-    def pct(n): 
+    def pct(n):
         return 0.0 if total == 0 else (100.0 * n / total)
-    sys.stderr.write(f"[trim_host_tails] total_reads={total}\tkept={kept}\ttrimmed_reads={trimmed}\ttrimmed_bp={trimmed_bp}\thost_only={host_only}\n")
+
+    sys.stderr.write(
+        f"[trim_host_tails] total_reads={total}\tkept={kept}\ttrimmed_reads={trimmed}\ttrimmed_bp={trimmed_bp}\thost_only={host_only}\n"
+    )
     for k in sorted(reasons):
         sys.stderr.write(f"[trim_host_tails] reason_count\t{k}={reasons[k]}\n")
+
 
 if __name__ == "__main__":
     main()
