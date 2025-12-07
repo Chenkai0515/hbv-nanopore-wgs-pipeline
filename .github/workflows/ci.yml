@@ -49,7 +49,7 @@ jobs:
     
     - name: Run unit tests
       run: |
-        pytest tests/test_coordinate_transform.py -v --tb=short
+        PYTHONPATH=scripts pytest tests/test_coordinate_transform.py -v --tb=short
     
     - name: Run config parser tests
       run: |
@@ -78,7 +78,7 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        pytest tests/ -v --cov=scripts --cov-report=xml --cov-report=term-missing
+        PYTHONPATH=scripts pytest tests/ -v --cov=scripts --cov-report=xml --cov-report=term-missing
       continue-on-error: true  # Some tests may require additional deps
     
     - name: Upload coverage reports
