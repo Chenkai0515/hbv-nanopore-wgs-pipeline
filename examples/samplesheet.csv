@@ -1,0 +1,10 @@
+sample_id,fastq_path,barcode,genotype,notes
+10090,/path/to/mini_dataset/10090_subsampled.fastq,barcode01,B,Control sample
+10893,/path/to/mini_dataset/10893_subsampled.fastq,barcode02,C,Treatment - has variants
+21024,/path/to/mini_dataset/21024_subsampled.fastq,barcode03,B,Standard sample
+23146,/path/to/mini_dataset/23146_subsampled.fastq,barcode04,C,Standard sample
+33117,/path/to/mini_dataset/33117_subsampled.fastq,barcode05,B,Standard sample
+40154,/path/to/mini_dataset/40154_subsampled.fastq,barcode06,C,Validation - has variants
+40625,/path/to/mini_dataset/40625_subsampled.fastq,barcode07,B,Has variants
+40750,/path/to/mini_dataset/40750_subsampled.fastq,barcode08,C,Has variants
+

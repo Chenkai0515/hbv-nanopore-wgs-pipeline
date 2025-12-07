@@ -1,0 +1,31 @@
+# HBV Pipeline - Kraken2 & Host Deconv Environment
+# For scripts: 5_kraken2_nanopore_qc.sh, 6.1-6.4_*.py/sh, 7_TA1_map_V2_unmaskreads.sh
+#
+# Installation:
+#   mamba env create -f env_kraken2.yml
+#   conda activate hbv_kraken2
+#
+name: hbv_kraken2
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Contamination screening
+  - kraken2>=2.1.2
+  - krona>=2.8.1
+  
+  # Alignment
+  - minimap2>=2.24
+  - samtools>=1.15
+  
+  # Sequence utilities
+  - seqkit>=2.3.0
+  - pigz>=2.6
+  
+  # Python dependencies
+  - python>=3.9
+  - pandas>=1.4
+  - matplotlib>=3.5
+  - biopython>=1.79
+

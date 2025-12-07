@@ -1,0 +1,10 @@
+sample_id,fastq_path,barcode,genotype,notes
+10090,/path/to/fastq/10090.fastq.gz,barcode01,B,Control sample
+10893,/path/to/fastq/10893.fastq.gz,barcode02,C,Treatment group
+21024,/path/to/fastq/21024.fastq.gz,barcode03,B,
+23146,/path/to/fastq/23146.fastq.gz,barcode04,C,
+33117,/path/to/fastq/33117.fastq.gz,barcode05,B,
+40154,/path/to/fastq/40154.fastq.gz,barcode06,C,Validation sample
+40625,/path/to/fastq/40625.fastq.gz,barcode07,B,
+40750,/path/to/fastq/40750.fastq.gz,barcode08,C,
+

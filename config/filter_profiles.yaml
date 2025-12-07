@@ -1,0 +1,130 @@
+# ============================================================================
+# HBV Variant Filtering Profiles
+# ============================================================================
+# Three profiles for different use cases:
+#   - strict:   Maximum specificity, fewer false positives
+#   - balanced: Recommended for most analyses
+#   - lenient:  Maximum sensitivity, may include more false positives
+# ============================================================================
+
+# ----- Strict Profile -----
+# Use for: Clinical applications, publication-ready calls
+# Trade-off: May miss some real low-frequency variants
+strict:
+  snp:
+    min_af: 0.05           # Minimum allele frequency (5%)
+    min_depth: 50          # Minimum total depth
+    min_alt_depth: 5       # Minimum alternate allele depth
+    min_qual: 30           # Minimum quality score
+    min_strand_bias: 0.1   # Minimum reads on each strand
+    max_homopolymer_len: 4 # Exclude variants in homopolymers > N
+  
+  indel:
+    min_af: 0.10           # Higher threshold for indels (10%)
+    min_depth: 100         # Higher depth requirement
+    min_alt_depth: 10
+    min_qual: 40
+    min_strand_bias: 0.15
+    max_homopolymer_len: 3
+
+# ----- Balanced Profile -----
+# Use for: Standard variant analysis, most studies
+# Trade-off: Good balance of sensitivity and specificity
+balanced:
+  snp:
+    min_af: 0.03           # 3% allele frequency
+    min_depth: 30
+    min_alt_depth: 3
+    min_qual: 20
+    min_strand_bias: 0.05
+    max_homopolymer_len: 5
+  
+  indel:
+    min_af: 0.05           # 5% for indels
+    min_depth: 50
+    min_alt_depth: 5
+    min_qual: 25
+    min_strand_bias: 0.10
+    max_homopolymer_len: 4
+
+# ----- Lenient Profile -----
+# Use for: Exploratory analysis, rare variant detection
+# Trade-off: Higher sensitivity but more false positives
+lenient:
+  snp:
+    min_af: 0.01           # 1% allele frequency
+    min_depth: 10
+    min_alt_depth: 2
+    min_qual: 15
+    min_strand_bias: 0.01
+    max_homopolymer_len: 6
+  
+  indel:
+    min_af: 0.02           # 2% for indels
+    min_depth: 20
+    min_alt_depth: 3
+    min_qual: 20
+    min_strand_bias: 0.05
+    max_homopolymer_len: 5
+
+# ----- Quality Tier Definitions -----
+# Applied after profile filtering
+quality_tiers:
+  HC:  # High Confidence
+    description: "High-quality variants, suitable for clinical reporting"
+    min_af: 0.20
+    min_depth: 100
+    dual_caller_required: true    # Must be called by both iVar and Clair3
+  
+  MC:  # Medium Confidence
+    description: "Good quality variants, standard analysis"
+    min_af: 0.05
+    min_depth: 50
+    dual_caller_required: false
+  
+  LF:  # Low Frequency
+    description: "Low-frequency variants, candidates for validation"
+    min_af: 0.01
+    min_depth: 30
+    dual_caller_required: false
+    flag_for_validation: true
+
+# ----- Blacklist (Panel of Normals) Settings -----
+blacklist:
+  # Minimum number of samples with variant to add to blacklist
+  min_sample_count: 3
+  
+  # Minimum fraction of cohort with variant
+  min_cohort_fraction: 0.30
+  
+  # Maximum AF to be considered a recurrent artifact
+  max_af_threshold: 0.05
+  
+  # Genomic regions to always flag (homopolymers, known artifacts)
+  always_flag_regions:
+    - "1:1799-1803"   # Example: known homopolymer region
+    - "1:2331-2335"   # Example: known artifact hotspot
+
+# ----- Special Variant Categories -----
+special_sites:
+  # BCP (Basal Core Promoter) mutations
+  bcp:
+    positions: [1762, 1764]
+    expected_mutations:
+      - "A1762T"
+      - "G1764A"
+    clinical_significance: "Associated with HCC risk"
+  
+  # PreCore mutations
+  precore:
+    positions: [1896, 1899]
+    expected_mutations:
+      - "G1896A"
+      - "G1899A"
+    clinical_significance: "Creates stop codon, HBeAg-negative phenotype"
+  
+  # Drug resistance positions (RT domain)
+  drug_resistance:
+    positions: [169, 173, 180, 181, 184, 202, 204, 236, 250]
+    significance: "Antiviral resistance mutations"
+

@@ -1,0 +1,25 @@
+# HBV Pipeline - Daily/Coverage Analysis Environment
+# For scripts: 8_TA2_depth_v2.sh
+#
+# Installation:
+#   mamba env create -f env_daily.yml
+#   conda activate hbv_daily
+#
+name: hbv_daily
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Coverage analysis
+  - mosdepth>=0.3.3
+  
+  # BAM manipulation
+  - samtools>=1.15
+  
+  # Python
+  - python>=3.9
+  
+  # Utilities
+  - pigz>=2.6
+

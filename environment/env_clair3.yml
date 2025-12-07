@@ -1,0 +1,45 @@
+# HBV Pipeline - Clair3 Environment
+# Deep learning-based variant calling
+#
+# Installation:
+#   mamba env create -f env_clair3.yml
+#   conda activate hbv_clair3
+#
+# Note for macOS ARM (M1/M2/M3):
+#   - Install GNU getopt: brew install gnu-getopt
+#   - Add to PATH: export PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"
+#   - Use tensorflow-macos==2.15.0 with keras==2.15.0
+#
+# Download Clair3 models:
+#   wget https://github.com/HKU-BAL/Clair3/releases/download/v1.0.0/clair3_models.tar.gz
+#
+name: hbv_clair3
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Variant calling
+  - clair3>=1.0.0
+  
+  # Alignment tools
+  - minimap2>=2.24
+  - samtools>=1.15
+  
+  # VCF manipulation
+  - bcftools>=1.15
+  - tabix
+  - bgzip
+  
+  # Python
+  - python>=3.8,<3.11
+  - pandas>=1.4
+  - numpy>=1.21
+  
+  # Parallel processing
+  - parallel
+  - pigz>=2.6
+
+# For macOS ARM, you may need to install separately:
+# pip install tensorflow-macos==2.15.0 keras==2.15.0
+

@@ -1,58 +1,52 @@
 #!/usr/bin/env bash
 # ============================================================================
-# 8_TA2_depth_v2.sh - Coverage Analysis & QC Masks (Combined Version)
+# 8_TA2_depth_v2.sh - Coverage Analysis & QC Masks
 # ============================================================================
 # Features:
 #   - per-base coverage (mosdepth)
 #   - sliding-window coverage
 #   - low-coverage & high-variance windows (BED)
 #   - homopolymer masks from reference (BED)
-#   - per-sample coverage summary (TSV)
-#   - ALL samples combined summary (TSV)
-#
-# This script combines the functionality of:
-#   - 8_TA2_depth.sh (main analysis)
-#   - 8.2_TA2_rebuild_summary.sh (summary aggregation)
+#   - per-sample and combined coverage summary (TSV)
 # ============================================================================
 
 set -euo pipefail
 
 ########################
-# User-configurable
+# Path Configuration
 ########################
-BAMS_DIR="/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/TA1_map_6_V2/bam"
-REF="/Users/jck/Desktop/ref/gold/reordered_1824_3221_reference_A2763.fasta"
-OUT_DIR="/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/TA2_depth_7"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$(dirname "${SCRIPT_DIR}")")"
 
-# Threads for mosdepth
+BAMS_DIR="${BAMS_DIR:-${PROJECT_DIR}/TA1_map_6_V2/bam}"
+REF="${REF:-${HBV_REF:-/path/to/reference.fasta}}"
+OUT_DIR="${OUT_DIR:-${PROJECT_DIR}/TA2_depth_7}"
+
 THREADS="${THREADS:-4}"
 
-# Sliding window setup (HBV ~3.2kb; 建议窗口=200、步长=50)
+# Sliding window: HBV ~3.2kb, window=200bp, step=50bp
 WIN="${WIN:-200}"
 STEP="${STEP:-50}"
 
-# Coverage filters (动态阈值，兼顾不同测序深度)
-# 低覆盖窗口：coverage < max(LOW_ABS, LOW_FRAC * sample_median)
-LOW_FRAC="${LOW_FRAC:-0.20}"   # 低于中位数的 20%
-LOW_ABS="${LOW_ABS:-100}"      # 同时不低于这个绝对阈值
+# Coverage thresholds
+LOW_FRAC="${LOW_FRAC:-0.20}"   # Low = below 20% of median
+LOW_ABS="${LOW_ABS:-100}"      # Absolute minimum threshold
 
-# 高波动窗口（相对中位数的 robust z-score；使用 MAD）
-# 标注 |cov - median| > MAD_MULT * MAD 的窗口
+# High variance: MAD multiplier
 MAD_MULT="${MAD_MULT:-4}"
 
-# Homopolymer mask（生成 ≥4bp 与 ≥6bp 两套，以及±5bp pad 的版本）
+# Homopolymer masks: >=4bp and >=6bp runs, with padding
 HPOLY_MIN4="${HPOLY_MIN4:-4}"
 HPOLY_MIN6="${HPOLY_MIN6:-6}"
 HPOLY_PAD="${HPOLY_PAD:-5}"
 
-# mosdepth 过滤标志（排除 unmapped/secondary/supplementary）
-# 0x4=unmapped, 0x100=secondary, 0x800=supplementary -> 0x904
-MOS_FFLAGS="${MOS_FFLAGS:-2308}"  # 十进制的 0x904
+# mosdepth filter flags (exclude unmapped/secondary/supplementary = 0x904)
+MOS_FFLAGS="${MOS_FFLAGS:-2308}"
 
 ########################
 # Tools check
 ########################
-need() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: $1 not found in PATH"; exit 1; }; }
+need() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: $1 not found"; exit 1; }; }
 need mosdepth
 need samtools
 need python3
@@ -66,13 +60,13 @@ mkdir -p "${OUT_DIR}"/{mosdepth,windows,perbase,flags,homopolymers,summary,logs,
 # Reference index + windows
 ########################
 if [[ ! -s "${REF}.fai" ]]; then
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] faidx reference"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Indexing reference"
   samtools faidx "${REF}"
 fi
 
 WIN_BED="${OUT_DIR}/tmp/ref.win${WIN}_step${STEP}.bed"
 if [[ ! -s "${WIN_BED}" ]]; then
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] make sliding windows: ${WIN_BED}"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Creating sliding windows: ${WIN_BED}"
   awk -v OFS="\t" -v W="${WIN}" -v S="${STEP}" '
     FNR==NR {len[$1]=$2; chr[NR]=$1; nchr=NR; next}
     END{
@@ -95,7 +89,7 @@ HP6="${OUT_DIR}/homopolymers/ref.hpoly_ge${HPOLY_MIN6}.bed"
 HP6_PAD="${OUT_DIR}/homopolymers/ref.hpoly_ge${HPOLY_MIN6}.pad${HPOLY_PAD}.bed"
 
 if [[ ! -s "${HP4}" || ! -s "${HP6}" || ! -s "${HP6_PAD}" ]]; then
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] build homopolymer masks from ${REF}"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Building homopolymer masks"
   python3 - "$REF" "$HPOLY_MIN4" "$HPOLY_MIN6" "$HPOLY_PAD" "$HP4" "$HP6" "$HP6_PAD" <<'PY'
 import sys
 from itertools import groupby
@@ -118,7 +112,6 @@ def padded(items, L, pad):
         pe = min(L[ctg], e + pad)
         yield (ctg, ps, pe)
 
-# Load fasta to memory (small genome)
 seqs = {}
 lens = {}
 ctg=None; buf=[]
@@ -157,10 +150,9 @@ PY
 fi
 
 ########################
-# Helpers
+# Helper functions
 ########################
 merge_bed() {
-  # merge sorted BED from stdin -> stdout
   awk -v OFS="\t" '
     NR==1{c=$1;s=$2;e=$3; next}
     ($1==c && $2<=e){ if($3>e)e=$3; next }
@@ -168,7 +160,6 @@ merge_bed() {
     END{ if(NR>0) print c,s,e }'
 }
 
-# 使用 bash/awk 计算覆盖度统计（避免 here-doc stdin 冲突问题）
 compute_coverage_stats() {
   local sample="$1"
   local regions_gz="$2"
@@ -181,14 +172,11 @@ compute_coverage_stats() {
 
   local tmp_cov
   tmp_cov="$(mktemp)"
-
-  # 提取第4列覆盖度值并排序
   gzip -cd "${regions_gz}" | awk '{print $4}' | sort -n > "${tmp_cov}"
   local n
   n=$(wc -l < "${tmp_cov}" | tr -d ' ')
 
   if [[ "$n" -eq 0 ]]; then
-    # 无数据
     > "${low_bed}"
     > "${hv_bed}"
     echo -e "${sample}\t0\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t0\t0" > "${summary_tsv}"
@@ -196,7 +184,7 @@ compute_coverage_stats() {
     return
   fi
 
-  # 计算 median
+  # Calculate median
   local median
   if (( n % 2 == 1 )); then
     local k=$(( (n+1)/2 ))
@@ -206,52 +194,25 @@ compute_coverage_stats() {
     median=$(awk -v k="$k" 'NR==k{a=$1} NR==k+1{printf "%.6f", (a+$1)/2; exit}' "${tmp_cov}")
   fi
 
-  # 计算 mean
-  local mean
+  local mean stdev cv mn mx low_thr mad mad_thr low_cnt hv_cnt low_frac_val hv_frac_val
   mean=$(awk '{s+=$1} END{printf "%.6f", s/NR}' "${tmp_cov}")
-
-  # 计算 stdev (总体标准差)
-  local stdev
   stdev=$(awk -v m="$mean" '{d=($1-m); s+=d*d} END{printf "%.6f", sqrt(s/NR)}' "${tmp_cov}")
-
-  # 计算 cv (变异系数)
-  local cv
   cv=$(awk -v m="$mean" -v sd="$stdev" 'BEGIN{printf "%.6f", (m>0? sd/m : 0)}')
-
-  # min/max
-  local mn mx
   mn=$(head -n1 "${tmp_cov}")
   mx=$(tail -n1 "${tmp_cov}")
-
-  # low_thr = max(LOW_ABS, LOW_FRAC * median)
-  local low_thr
   low_thr=$(awk -v m="$median" -v lf="$low_frac" -v la="$low_abs" 'BEGIN{t=lf*m; if (t<la) t=la; printf "%.6f", t}')
-
-  # 计算 MAD (Median Absolute Deviation)
-  local mad
+  
   mad=$(awk -v med="$median" '{x=$1-med; if(x<0)x=-x; print x}' "${tmp_cov}" | sort -n \
-        | awk -v n="$n" '{
-            a[NR]=$1
-          } END{
-            if(n%2){k=(n+1)/2; print a[k]}
-            else   {k=n/2; printf "%.6f", (a[k]+a[k+1])/2}
-          }')
-  local mad_thr
+        | awk -v n="$n" '{a[NR]=$1} END{if(n%2){k=(n+1)/2; print a[k]} else{k=n/2; printf "%.6f", (a[k]+a[k+1])/2}}')
   mad_thr=$(awk -v mm="$mad_mult" -v mad="$mad" 'BEGIN{printf "%.6f", mm*mad}')
 
-  # 统计低覆盖窗口数和高波动窗口数
-  local low_cnt hv_cnt
   low_cnt=$(awk -v t="$low_thr" '$1 < t{c++} END{print 0+c}' "${tmp_cov}")
   hv_cnt=$(awk -v med="$median" -v mt="$mad_thr" '{x=$1-med; if(x<0)x=-x; if(x>mt)c++} END{print 0+c}' "${tmp_cov}")
-
-  local low_frac_val hv_frac_val
   low_frac_val=$(awk -v a="$low_cnt" -v n="$n" 'BEGIN{printf "%.6f", a/n}')
   hv_frac_val=$(awk -v a="$hv_cnt" -v n="$n" 'BEGIN{printf "%.6f", a/n}')
 
-  # 写入摘要（不含表头，后续汇总时统一加）
   echo -e "${sample}\t${n}\t${mean}\t${median}\t${stdev}\t${cv}\t${mn}\t${mx}\t${low_thr}\t${mad_thr}\t${low_frac_val}\t${hv_frac_val}" > "${summary_tsv}"
 
-  # 生成低覆盖 BED 和高波动 BED
   gzip -cd "${regions_gz}" | awk -v t="$low_thr" '$4 < t {print $1"\t"$2"\t"$3}' > "${low_bed}"
   gzip -cd "${regions_gz}" | awk -v med="$median" -v mt="$mad_thr" '{x=$4-med; if(x<0)x=-x; if(x>mt) print $1"\t"$2"\t"$3}' > "${hv_bed}"
 
@@ -262,45 +223,32 @@ compute_coverage_stats() {
 # Main loop
 ########################
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] TA2 Coverage Analysis v2 starting..."
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Parameters:"
-echo "  - BAMs directory: ${BAMS_DIR}"
-echo "  - Reference: ${REF}"
-echo "  - Output: ${OUT_DIR}"
-echo "  - Window: ${WIN}bp, Step: ${STEP}bp"
-echo "  - Low coverage threshold: max(${LOW_ABS}, ${LOW_FRAC}*median)"
-echo "  - High variance threshold: ${MAD_MULT}*MAD"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] TA2 Coverage Analysis starting..."
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] BAMs: ${BAMS_DIR}"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Reference: ${REF}"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Output: ${OUT_DIR}"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
 
 find "${BAMS_DIR}" -type f -name "*.sorted.bam" | sort | while read -r BAM; do
-  BN="$(basename "${BAM}")"                # e.g., 10090.sec_off.sorted.bam
-  ID="${BN%.sorted.bam}"                   # 10090.sec_off
+  BN="$(basename "${BAM}")"
+  ID="${BN%.sorted.bam}"
   PREFIX_BASE="${OUT_DIR}/mosdepth/${ID}.base"
   PREFIX_WIN="${OUT_DIR}/mosdepth/${ID}.w${WIN}s${STEP}"
 
   echo ""
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] >> Processing sample: ${ID}"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Processing: ${ID}"
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')]    - mosdepth per-base coverage"
-  mosdepth \
-    -t "${THREADS}" \
-    -F "${MOS_FFLAGS}" \
-    "${PREFIX_BASE}" "${BAM}" \
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')]   mosdepth per-base"
+  mosdepth -t "${THREADS}" -F "${MOS_FFLAGS}" "${PREFIX_BASE}" "${BAM}" \
     2> "${OUT_DIR}/logs/${ID}.mosdepth.base.log"
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')]    - mosdepth windows (w=${WIN}, step=${STEP})"
-  mosdepth \
-    -t "${THREADS}" \
-    -F "${MOS_FFLAGS}" \
-    -b "${WIN_BED}" \
-    "${PREFIX_WIN}" "${BAM}" \
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')]   mosdepth windows"
+  mosdepth -t "${THREADS}" -F "${MOS_FFLAGS}" -b "${WIN_BED}" "${PREFIX_WIN}" "${BAM}" \
     2> "${OUT_DIR}/logs/${ID}.mosdepth.win.log"
 
-  # QC flags from windows
   REG_BED_GZ="${PREFIX_WIN}.regions.bed.gz"
   if [[ ! -s "${REG_BED_GZ}" ]]; then
-    echo "WARN: missing ${REG_BED_GZ} for ${ID}" >&2
+    echo "WARN: missing ${REG_BED_GZ}" >&2
     continue
   fi
 
@@ -308,44 +256,32 @@ find "${BAMS_DIR}" -type f -name "*.sorted.bam" | sort | while read -r BAM; do
   HV_RAW="${OUT_DIR}/flags/${ID}.highvar.raw.bed"
   SUM_TSV="${OUT_DIR}/summary/${ID}.coverage_summary.tsv"
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')]    - computing coverage statistics"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')]   computing stats"
   compute_coverage_stats "${ID}" "${REG_BED_GZ}" "${LOW_RAW}" "${HV_RAW}" "${SUM_TSV}" "${LOW_FRAC}" "${LOW_ABS}" "${MAD_MULT}"
 
-  # merge adjacent windows to cleaner BEDs
   sort -k1,1 -k2,2n "${LOW_RAW}" | merge_bed > "${OUT_DIR}/flags/${ID}.lowcov.merged.bed"
   sort -k1,1 -k2,2n "${HV_RAW}"  | merge_bed > "${OUT_DIR}/flags/${ID}.highvar.merged.bed"
 
-  # organize per-base + regions to top-level folders (for IGV & downstream)
   ln -sf "${PREFIX_BASE}.per-base.bed.gz"  "${OUT_DIR}/perbase/${ID}.per-base.bed.gz" 2>/dev/null || true
   ln -sf "${PREFIX_WIN}.regions.bed.gz"    "${OUT_DIR}/windows/${ID}.w${WIN}s${STEP}.bed.gz" 2>/dev/null || true
-
 done
 
 ########################
-# Aggregate all summaries
+# Aggregate summaries
 ########################
 echo ""
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Building combined summary..."
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
 
 ALL_SUMMARY="${OUT_DIR}/summary/ALL.coverage_summary.tsv"
+echo -e "sample\twindows\tmean\tmedian\tstdev\tcv\tmin\tmax\tlow_thr\tmad_thr\tlow_frac\thighvar_frac" > "${ALL_SUMMARY}"
 
-# Write header
-echo -e "sample\twindows\tmean\tmedian\tstdev\tcv\tmin\tmax\tlow_thr\tmad_thr\tlow_frac\thighvar_frac" \
-  > "${ALL_SUMMARY}"
-
-# Aggregate all individual summaries (no header in individual files)
 shopt -s nullglob
 for tsv in "${OUT_DIR}/summary"/*.coverage_summary.tsv; do
   bn="$(basename "${tsv}")"
-  # Skip the ALL summary file itself
   [[ "${bn}" == "ALL.coverage_summary.tsv" ]] && continue
-  # Append data (single line without header)
   cat "${tsv}" >> "${ALL_SUMMARY}"
 done
 
-# Sort by sample name (optional, for consistent ordering)
 {
   head -n1 "${ALL_SUMMARY}"
   tail -n +2 "${ALL_SUMMARY}" | sort -t$'\t' -k1,1
@@ -353,29 +289,8 @@ done
 
 TOTAL_SAMPLES=$(tail -n +2 "${ALL_SUMMARY}" | wc -l | tr -d ' ')
 
-########################
-# Final summary
-########################
 echo ""
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] TA2 Coverage Analysis v2 Complete!"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Complete! Samples: ${TOTAL_SAMPLES}"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Summary: ${ALL_SUMMARY}"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ============================================"
-echo ""
-echo "Samples processed: ${TOTAL_SAMPLES}"
-echo ""
-echo "Output directories:"
-echo "  - mosdepth raw:      ${OUT_DIR}/mosdepth/"
-echo "  - per-base coverage: ${OUT_DIR}/perbase/"
-echo "  - window coverage:   ${OUT_DIR}/windows/"
-echo "  - QC flags:          ${OUT_DIR}/flags/"
-echo "  - summaries:         ${OUT_DIR}/summary/"
-echo "  - homopolymer masks: ${OUT_DIR}/homopolymers/"
-echo "  - logs:              ${OUT_DIR}/logs/"
-echo ""
-echo "Key output files:"
-echo "  - Combined summary:  ${ALL_SUMMARY}"
-echo "  - Homopolymer ≥4bp:  ${HP4}"
-echo "  - Homopolymer ≥6bp:  ${HP6}"
-echo "  - Homopolymer padded: ${HP6_PAD}"
-echo ""
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Done."

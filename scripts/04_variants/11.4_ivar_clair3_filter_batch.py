@@ -86,17 +86,31 @@ from typing import Dict, List, Tuple, Optional, Set
 import pandas as pd
 
 # ========== PATH CONFIGURATION ==========
-# Working directory
-WORK_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+# These paths can be overridden by:
+#   1. Environment variables (HBV_WORK_DIR, HBV_CONSENSUS_DIR)
+#   2. Command line arguments (--work-dir, --consensus-dir)
+#
+# Default: Use relative paths from script location (for standalone use)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_DIR = os.path.dirname(os.path.dirname(_SCRIPT_DIR))
 
-# Consensus sequences directory
-CONSENSUS_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/Medaka_consensus_8/r2"
+# Working directory (variants_call_10)
+WORK_DIR = os.environ.get(
+    "HBV_WORK_DIR",
+    os.path.join(_PROJECT_DIR, "variants_call_10")
+)
 
-# Input paths
+# Consensus sequences directory (Medaka_consensus_8/r2)
+CONSENSUS_DIR = os.environ.get(
+    "HBV_CONSENSUS_DIR",
+    os.path.join(_PROJECT_DIR, "Medaka_consensus_8", "r2")
+)
+
+# Input paths (derived from WORK_DIR)
 IVAR_DIR = os.path.join(WORK_DIR, "variants", "ivar")
 CLAIR3_DIR = os.path.join(WORK_DIR, "variants", "clair3")
 
-# Output path
+# Output path (derived from WORK_DIR)
 OUT_ROOT = os.path.join(WORK_DIR, "variants", "filtered")
 # ========================================
 

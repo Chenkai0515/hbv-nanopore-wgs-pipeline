@@ -1,0 +1,27 @@
+# HBV Pipeline - Dorado Environment
+# For scripts: 1_trim_adapters_dorado_fastq.sh, 2_filter_fastq_gz_2-4k_Q17.py, 3_run_porechop_midcheck.sh
+#
+# Installation:
+#   mamba env create -f env_dorado.yml
+#   conda activate hbv_dorado
+#
+# Note: Dorado is available from ONT. Install separately if not in conda.
+#
+name: hbv_dorado
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Adapter trimming (mid-adapter removal)
+  - porechop_abi>=0.5.0
+  
+  # Compression
+  - pigz>=2.6
+  
+  # Python for filtering script
+  - python>=3.9
+  
+  # Optional: install dorado separately from ONT
+  # https://github.com/nanoporetech/dorado
+

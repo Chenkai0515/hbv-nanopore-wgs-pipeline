@@ -1,0 +1,32 @@
+# HBV Pipeline - QC Environment
+# For scripts: 4_ont_multi_qc.sh
+#
+# Installation:
+#   mamba env create -f env_qc.yml
+#   conda activate hbv_qc
+#
+name: hbv_qc
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Quality control
+  - fastqc>=0.12.1
+  - nanoplot>=1.40.0
+  - multiqc>=1.14
+  
+  # Sequence statistics
+  - seqkit>=2.3.0
+  
+  # Python dependencies
+  - python>=3.9
+  
+  # Compression
+  - pigz>=2.6
+  
+  # pip dependencies
+  - pip
+  - pip:
+    - nanoQC>=0.9.4
+

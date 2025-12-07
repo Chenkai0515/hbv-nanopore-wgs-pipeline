@@ -1,0 +1,71 @@
+# Kraken2 Reagent Contamination Taxa List
+# ============================================
+# Common reagent and kit contaminants to flag during QC
+# Format: taxid<TAB>name<TAB>category<TAB>notes
+#
+# Categories:
+#   - reagent: Common kit/reagent contaminants
+#   - environmental: Environmental bacteria (often from water/air)
+#   - skin: Human skin flora (handling contamination)
+#   - oral: Oral microbiome (speaking/breathing near samples)
+#
+# Reference: Salter et al. (2014) BMC Biology, "Reagent and laboratory contamination..."
+# ============================================
+
+# ----- Common Kit Contaminants (Reagent Grade) -----
+1747	Cutibacterium acnes	skin	Former Propionibacterium acnes, very common
+1280	Staphylococcus aureus	skin	Handling contamination
+1282	Staphylococcus epidermidis	skin	Ubiquitous skin commensal
+286	Pseudomonas	reagent	Common in water-based reagents
+294	Pseudomonas fluorescens	reagent	Psychrotrophic, survives cold storage
+287	Pseudomonas aeruginosa	reagent	Opportunistic, water-associated
+1386	Bacillus	environmental	Spore-former, environmentally persistent
+1396	Bacillus cereus	environmental	Heat-resistant spores
+1428	Bacillus megaterium	environmental	Large cells, easily detected
+562	Escherichia coli	reagent	Laboratory strain contamination
+573	Klebsiella pneumoniae	environmental	Environmental organism
+570	Klebsiella	environmental	Hospital environment associated
+
+# ----- Water/Environmental Contaminants -----
+286	Pseudomonas	environmental	Water-associated
+1224	Alphaproteobacteria	environmental	Diverse group, water-associated
+28901	Salmonella enterica	reagent	Lab strain contamination possible
+590	Salmonella	reagent	Lab strains
+204441	Delftia acidovorans	reagent	Common extraction kit contaminant
+364	Acinetobacter	environmental	Environmental, desiccation-resistant
+
+# ----- Oral/Respiratory Flora -----
+1301	Streptococcus	oral	Oral cavity dominant genus
+1303	Streptococcus mutans	oral	Dental caries associated
+1313	Streptococcus pneumoniae	oral	Upper respiratory tract
+1304	Streptococcus salivarius	oral	Major oral commensal
+724	Haemophilus	oral	Upper respiratory tract
+727	Haemophilus influenzae	oral	Respiratory commensal
+
+# ----- Skin Flora -----
+1716	Corynebacterium	skin	Skin surface bacteria
+38289	Corynebacterium jeikeium	skin	Skin commensal
+1727	Corynebacterium pseudodiphtheriticum	skin	Skin and pharynx
+29385	Malassezia	skin	Fungal skin commensal (if fungi in DB)
+
+# ----- DNA Extraction Kit Contaminants -----
+# (Based on Salter et al. and Glassing et al. studies)
+32008	Burkholderia	reagent	Kit contaminant
+337	Brucella	reagent	DNA extraction kit
+469	Acinetobacter	reagent	Qiagen kit contaminant
+480	Moraxella	reagent	Buffer contaminant
+482	Neisseria	reagent	DNA column contaminant
+
+# ----- Library Prep Contaminants -----
+# These may appear if library prep kits are contaminated
+1350	Enterococcus	reagent	Lab environment
+1351	Enterococcus faecalis	reagent	Lab surfaces
+1352	Enterococcus faecium	reagent	Hospital environment
+
+# ----- Notes -----
+# 1. Reads classified to these taxa at low abundance (<0.1% of total)
+#    are typically flagged but not automatically removed
+# 2. High abundance (>1%) of any taxon should trigger investigation
+# 3. Update this list based on your specific kit and lab environment
+# 4. Human (taxid 9606) is handled separately in host decontamination
+

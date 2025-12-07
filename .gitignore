@@ -1,0 +1,141 @@
+# ============================================
+# HBV Nanopore Pipeline - .gitignore
+# ============================================
+
+# ----- Sequencing Data Files -----
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.bam
+*.bam.bai
+*.bai
+*.sam
+*.cram
+*.crai
+
+# ----- Reference & Index Files -----
+*.mmi
+*.fai
+*.dict
+*.bt2
+*.ebwt
+
+# ----- Variant Calling Outputs -----
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.bcf
+
+# ----- Analysis Outputs -----
+results/
+*_output/
+*_out/
+
+# ----- Kraken2 Database -----
+kraken2_db/
+*.k2d
+
+# ----- Temporary & Intermediate Files -----
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ----- Log Files -----
+*.log
+logs/
+
+# ----- Python -----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ----- Conda/Mamba Environments -----
+.conda/
+envs/
+*.conda
+
+# ----- Virtual Environments -----
+venv/
+ENV/
+env/
+.venv/
+
+# ----- IDE & Editor -----
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.spyderproject
+.spyproject
+
+# ----- macOS -----
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ----- Linux -----
+*~
+.fuse_hidden*
+.nfs*
+
+# ----- Windows -----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ----- Jupyter Notebooks -----
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ----- Config with secrets -----
+config/config.yaml
+config/config.local.yaml
+.env
+.env.local
+
+# ----- Large files that shouldn't be tracked -----
+*.tar
+*.tar.gz
+*.zip
+*.7z
+
+# ----- Medaka intermediate files -----
+*.hdf
+*.hdf5
+
+# ----- MultiQC output -----
+multiqc_data/
+
+# ----- Keep these directories but ignore contents -----
+# results/*
+# !results/.gitkeep
+# !results/*/.gitkeep
+

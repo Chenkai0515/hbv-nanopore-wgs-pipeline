@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# Adapter trimming for ONT FASTQ(.gz) with dorado trim
-# Now also supports plain .fastq/.fq (and .gz variants)
-# Fixed: robust version detection & safe first_fastq (no SIGPIPE)
+# Adapter trimming for ONT FASTQ with dorado trim
+# Supports .fastq/.fq and .gz variants
 set -Eeuo pipefail
 
 # -------- User defaults --------
-SRC_DIR="${SRC_DIR:-/Volumes/OWC/Analysis/trimmed}"
-OUT_DIR="${OUT_DIR:-/Volumes/OWC/Analysis/trimmed_out}"
-KIT="${KIT:-SQK-NBD114-24}"              # 你的试剂盒
-JOBS="${JOBS:-2}"                         # 并发作业数
-TPJ="${TPJ:-}"                            # 每作业线程数（为空则自动均分）
-MAX_READS_TEST="${MAX_READS_TEST:-2000}"  # 测试模式最多处理的 reads
+SRC_DIR="${SRC_DIR:-/path/to/input}"
+OUT_DIR="${OUT_DIR:-/path/to/output}"
+KIT="${KIT:-SQK-NBD114-24}"
+JOBS="${JOBS:-2}"
+TPJ="${TPJ:-}"
+MAX_READS_TEST="${MAX_READS_TEST:-2000}"
 MODE=""
 FORCE=0
 DRYRUN=0
@@ -18,21 +17,20 @@ DRYRUN=0
 usage() {
   cat <<EOF
 Usage:
-  $0 --test [N]           # 测试模式：只跑一个文件的前 N 条 reads（默认 $MAX_READS_TEST）
-  $0 --run                # 正式运行：处理目录下所有 .fastq(.gz) / .fq(.gz)
+  $0 --test [N]              # Test mode: process first N reads (default: $MAX_READS_TEST)
+  $0 --run                   # Full run: process all FASTQ files
 Options:
-  -i, --input  DIR        # 输入目录（默认 $SRC_DIR）
-  -o, --output DIR        # 输出目录（默认 $OUT_DIR）
-  -k, --kit    NAME       # sequencing kit（默认 $KIT）
-  -j, --jobs   INT        # 并发作业数（默认 $JOBS）
-  -t, --threads-per-job INT  # 每作业线程数（默认自动=CPU核数/JOBS）
-      --force             # 覆盖已存在的输出文件
-      --dry-run           # 仅打印命令，不实际运行
+  -i, --input  DIR           # Input directory (default: $SRC_DIR)
+  -o, --output DIR           # Output directory (default: $OUT_DIR)
+  -k, --kit    NAME          # Sequencing kit (default: $KIT)
+  -j, --jobs   INT           # Parallel jobs (default: $JOBS)
+  -t, --threads-per-job INT  # Threads per job (default: auto)
+      --force                # Overwrite existing files
+      --dry-run              # Print commands without executing
   -h, --help
 EOF
 }
 
-# ---- parse args ----
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --test) MODE="test"; shift; [[ "${1-}" =~ ^[0-9]+$ ]] && MAX_READS_TEST="$1" && shift || true ;;
@@ -49,25 +47,24 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -z "$MODE" ]] && { echo "请指定 --test 或 --run"; usage; exit 1; }
-[[ -d "$SRC_DIR" ]] || { echo "输入目录不存在: $SRC_DIR"; exit 1; }
+[[ -z "$MODE" ]] && { echo "Please specify --test or --run"; usage; exit 1; }
+[[ -d "$SRC_DIR" ]] || { echo "Input directory not found: $SRC_DIR"; exit 1; }
 mkdir -p "$OUT_DIR" "$OUT_DIR/_logs" "$OUT_DIR/_test"
 
-# ---- env checks ----
+# ---- Check dorado availability ----
 DORADO_AVAILABLE=0
 if command -v dorado >/dev/null 2>&1; then
   DORADO_AVAILABLE=1
 else
   if [[ ${DRYRUN:-0} -eq 1 ]]; then
-    echo "[WARN ] 未找到 dorado，但处于 --dry-run 模式，将仅打印命令"
+    echo "[WARN] dorado not found, dry-run mode will use default flags"
   else
-    echo "未找到 dorado，请先 'conda activate dorado'"; exit 1
+    echo "dorado not found. Please run: conda activate dorado"; exit 1
   fi
 fi
 
-# 版本解析与校验 (要求 >= 1.1.0) —— 仅在 dorado 可用时检查
+# Version check (requires >= 1.1.0)
 version_ge() {
-  # 语义化版本比较：a >= b 返回 0
   local IFS=.
   local a b i
   read -r -a a <<< "${1:-0.0.0}"
@@ -80,22 +77,23 @@ version_ge() {
   done
   return 0
 }
+
 if [[ $DORADO_AVAILABLE -eq 1 ]]; then
   DORADO_VER_LINE="$(dorado --version 2>&1 | tail -n 1)"
   DORADO_SEMVER="$(printf '%s' "$DORADO_VER_LINE" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 || true)"
-  echo "[INFO] dorado version: ${DORADO_SEMVER:-unknown} (要求 >= 1.1.0)"
+  echo "[INFO] dorado version: ${DORADO_SEMVER:-unknown} (requires >= 1.1.0)"
   if [[ -n "$DORADO_SEMVER" ]]; then
     if ! version_ge "$DORADO_SEMVER" "1.1.0"; then
-      echo "[ERROR] dorado 版本过低：$DORADO_SEMVER，至少需要 1.1.0"; exit 1
+      echo "[ERROR] dorado version too low: $DORADO_SEMVER, need at least 1.1.0"; exit 1
     fi
   else
-    echo "[WARN ] 无法解析 dorado 版本字符串：$DORADO_VER_LINE"
+    echo "[WARN] Cannot parse dorado version: $DORADO_VER_LINE"
   fi
 else
-  echo "[INFO] dorado 未就绪（dry-run 模式），跳过版本检查"
+  echo "[INFO] dorado not ready (dry-run mode), skipping version check"
 fi
 
-# CPU cores & threading
+# CPU & threading setup
 CORES="$( (sysctl -n hw.ncpu 2>/dev/null || getconf _NPROCESSORS_ONLN || echo 8) | awk '{print $1}')"
 if [[ -z "$TPJ" ]]; then
   TPJ=$(( CORES / JOBS ))
@@ -103,7 +101,7 @@ if [[ -z "$TPJ" ]]; then
 fi
 echo "[INFO] CPU cores=$CORES; jobs=$JOBS; threads-per-job=$TPJ"
 
-# Compressor
+# Compressor selection
 if command -v pigz >/dev/null 2>&1; then
   COMPRESS_CMD=(pigz -p "$TPJ" -1)
   COMPRESS="pigz -p ${TPJ} -1"
@@ -113,25 +111,25 @@ else
 fi
 echo "[INFO] compressor: ${COMPRESS}"
 
-# ---- detect dorado flags (兼容不同版本命名) ----
+# ---- Detect dorado flags ----
 KIT_FLAG=""
 EMIT_FASTQ_FLAG=""
 NO_PRIMERS_FLAG=""
 MAX_READS_FLAG=""
+
 detect_dorado_flags() {
   if [[ $DORADO_AVAILABLE -eq 0 ]]; then
-    # dry-run 回退：采用默认/常见参数名
     KIT_FLAG="--sequencing-kit"
     EMIT_FASTQ_FLAG="--emit-fastq"
     NO_PRIMERS_FLAG="--no-trim-primers"
     MAX_READS_FLAG="-n"
-    echo "[INFO] dry-run：使用默认参数名 (未探测)"
+    echo "[INFO] dry-run: using default flags"
     return 0
   fi
 
   local help
   if ! help="$(dorado trim --help 2>&1)"; then
-    echo "[ERROR] 无法获取 'dorado trim --help' 输出"; exit 1
+    echo "[ERROR] Cannot get 'dorado trim --help' output"; exit 1
   fi
 
   if grep -q -- "--sequencing-kit" <<< "$help"; then
@@ -139,34 +137,21 @@ detect_dorado_flags() {
   elif grep -q -- "--kit-name" <<< "$help"; then
     KIT_FLAG="--kit-name"
   else
-    echo "[ERROR] 未在 'dorado trim --help' 中找到 kit 相关选项 (--sequencing-kit/--kit-name)"; exit 1
+    echo "[ERROR] Kit flag not found in dorado trim --help"; exit 1
   fi
 
-  if grep -q -- "--emit-fastq" <<< "$help"; then
-    EMIT_FASTQ_FLAG="--emit-fastq"
-  else
-    EMIT_FASTQ_FLAG=""
-  fi
-
-  if grep -q -- "--no-trim-primers" <<< "$help"; then
-    NO_PRIMERS_FLAG="--no-trim-primers"
-  else
-    NO_PRIMERS_FLAG=""
-  fi
-
+  [[ $(grep -c -- "--emit-fastq" <<< "$help") -gt 0 ]] && EMIT_FASTQ_FLAG="--emit-fastq"
+  [[ $(grep -c -- "--no-trim-primers" <<< "$help") -gt 0 ]] && NO_PRIMERS_FLAG="--no-trim-primers"
+  
   if grep -qE '(^|[,[:space:]])-n([,[:space:]]|$)' <<< "$help"; then
     MAX_READS_FLAG="-n"
   elif grep -q -- "--max-reads" <<< "$help"; then
     MAX_READS_FLAG="--max-reads"
-  else
-    MAX_READS_FLAG=""
   fi
 }
 detect_dorado_flags
 
-# ---- helpers ----
-
-# 统一的输入文件枚举：支持 .fastq(.gz) 和 .fq(.gz)，并排除 trimmed 结果与隐藏/临时文件
+# ---- Helper functions ----
 list_inputs() {
   find "$SRC_DIR" -type f \
     \( -name "*.fastq.gz" -o -name "*.fastq" -o -name "*.fq.gz" -o -name "*.fq" \) \
@@ -176,7 +161,6 @@ list_inputs() {
     -print0
 }
 
-# 规范化去除扩展名，得到 stem（样本名）
 stem_from() {
   local base
   base="$(basename "$1")"
@@ -185,12 +169,11 @@ stem_from() {
     *.fq.gz)    printf '%s' "${base%.fq.gz}" ;;
     *.fastq)    printf '%s' "${base%.fastq}" ;;
     *.fq)       printf '%s' "${base%.fq}" ;;
-    *)          printf '%s' "${base%.*}" ;;  # fallback
+    *)          printf '%s' "${base%.*}" ;;
   esac
 }
 
 first_fastq() {
-  # 返回第一个非隐藏 fastq/fq（避免 SIGPIPE）
   while IFS= read -r -d '' f; do
     printf '%s' "$f"
     return 0
@@ -207,11 +190,10 @@ process_file() {
   log="$OUT_DIR/_logs/${stem}.log"
 
   if [[ $FORCE -eq 0 && -s "$out" ]]; then
-    echo "[SKIP] 已存在: $out"
+    echo "[SKIP] Already exists: $out"
     return 0
   fi
 
-  # 组装 dorado 命令 (数组形式以避免 eval)
   local dorado_cmd=(dorado trim "$in" "$KIT_FLAG" "$KIT" -t "$TPJ")
   [[ -n "$EMIT_FASTQ_FLAG" ]] && dorado_cmd+=("$EMIT_FASTQ_FLAG")
   [[ -n "$NO_PRIMERS_FLAG" ]] && dorado_cmd+=("$NO_PRIMERS_FLAG")
@@ -227,10 +209,10 @@ process_file() {
   echo "[DONE] $base"
 }
 
-# ---- main ----
+# ---- Main ----
 if [[ "$MODE" == "test" ]]; then
   TEST_FILE="$(first_fastq)"
-  [[ -z "$TEST_FILE" ]] && { echo "未找到 *.fastq(.gz) 或 *.fq(.gz)"; exit 1; }
+  [[ -z "$TEST_FILE" ]] && { echo "No FASTQ files found"; exit 1; }
 
   base="$(basename "$TEST_FILE")"
   stem="$(stem_from "$TEST_FILE")"
@@ -240,32 +222,25 @@ if [[ "$MODE" == "test" ]]; then
   dorado_cmd=(dorado trim "$TEST_FILE" "$KIT_FLAG" "$KIT" -t "$TPJ")
   [[ -n "$EMIT_FASTQ_FLAG" ]] && dorado_cmd+=("$EMIT_FASTQ_FLAG")
   [[ -n "$NO_PRIMERS_FLAG" ]] && dorado_cmd+=("$NO_PRIMERS_FLAG")
-  if [[ -n "$MAX_READS_FLAG" ]]; then
-    dorado_cmd+=("$MAX_READS_FLAG" "$MAX_READS_TEST")
-  fi
+  [[ -n "$MAX_READS_FLAG" ]] && dorado_cmd+=("$MAX_READS_FLAG" "$MAX_READS_TEST")
 
   echo "[TEST] $base -> $(basename "$out") (max_reads=$MAX_READS_TEST)"
   if [[ $DRYRUN -eq 1 ]]; then
-    if [[ -n "$MAX_READS_FLAG" ]]; then
-      echo "CMD: ${dorado_cmd[*]} 2> \"$log\" | ${COMPRESS} > \"$out\""; exit 0
-    else
-      echo "CMD: ${dorado_cmd[*]} 2> \"$log\" | head -n $((MAX_READS_TEST*4)) | ${COMPRESS} > \"$out\""; exit 0
-    fi
+    echo "CMD: ${dorado_cmd[*]} 2> \"$log\" | ${COMPRESS} > \"$out\""; exit 0
   fi
 
   set -o pipefail
   if [[ -n "$MAX_READS_FLAG" ]]; then
     "${dorado_cmd[@]}" 2> "$log" | "${COMPRESS_CMD[@]}" > "$out"
   else
-    # 回退：若无 max-reads 选项，则用 head 近似限制到 N 条 FASTQ 记录（每条 4 行）
     "${dorado_cmd[@]}" 2> "$log" | head -n $((MAX_READS_TEST*4)) | "${COMPRESS_CMD[@]}" > "$out"
   fi
-  echo "[TEST] 完成：$out"
+  echo "[TEST] Done: $out"
   exit 0
 fi
 
 if [[ "$MODE" == "run" ]]; then
-  echo "[INFO] 开始全量修剪 ..."
+  echo "[INFO] Starting full trimming ..."
   cnt=0
   while IFS= read -r -d '' f; do
     process_file "$f" &
@@ -275,5 +250,5 @@ if [[ "$MODE" == "run" ]]; then
     fi
   done < <(list_inputs)
   wait
-  echo "[INFO] 全部完成。输出目录: $OUT_DIR"
+  echo "[INFO] All done. Output: $OUT_DIR"
 fi

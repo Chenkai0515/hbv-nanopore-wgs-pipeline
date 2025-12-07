@@ -62,8 +62,19 @@ from functools import partial
 from concurrent.futures import ProcessPoolExecutor
 
 # ========== PATH CONFIGURATION ==========
+# These paths can be overridden by:
+#   1. Environment variables (HBV_WORK_DIR)
+#   2. Command line arguments
+#
+# Default: Use relative paths from script location (for standalone use)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_DIR = os.path.dirname(os.path.dirname(_SCRIPT_DIR))
+
 # Working directory (same as mapping output)
-WORK_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+WORK_DIR = os.environ.get(
+    "HBV_WORK_DIR",
+    os.path.join(_PROJECT_DIR, "variants_call_10")
+)
 
 # Input directory (mapping results)
 INPUT_DIR = os.path.join(WORK_DIR, "mapping")

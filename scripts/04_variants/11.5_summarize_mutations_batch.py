@@ -72,10 +72,21 @@ from typing import List, Tuple, Optional, Dict
 import pandas as pd
 
 # ========== PATH CONFIGURATION ==========
-# Working directory
-WORK_DIR = "/Users/jck/Desktop/workflow-qc/raw-sup-accuracy-fastq/git/hbv-nanopore-pipeline/variants_call_10"
+# These paths can be overridden by:
+#   1. Environment variables (HBV_WORK_DIR)
+#   2. Command line arguments
+#
+# Default: Use relative paths from script location (for standalone use)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_DIR = os.path.dirname(os.path.dirname(_SCRIPT_DIR))
 
-# Input paths
+# Working directory
+WORK_DIR = os.environ.get(
+    "HBV_WORK_DIR",
+    os.path.join(_PROJECT_DIR, "variants_call_10")
+)
+
+# Input paths (derived from WORK_DIR)
 IVAR_FINAL_ROOT = os.path.join(WORK_DIR, "variants", "filtered")
 CLAIR3_DIR = os.path.join(WORK_DIR, "variants", "clair3")
 
@@ -84,10 +95,10 @@ OUT_DIR = os.path.join(IVAR_FINAL_ROOT, "cohort_summary")
 # ========================================
 
 GENOME_LENGTH = 3221
-OFFSET = 1823  # 要和 11.6_coordinate_transform_batch.py 保持一致
+OFFSET = 1823  # Must match 11.6_coordinate_transform_batch.py
 
 def ref_to_rot(pos_ref: int) -> int:
-    """X02763 坐标 -> 旋转坐标"""
+    """Convert X02763 coordinates to rotated coordinates"""
     return ((pos_ref - 1) - OFFSET) % GENOME_LENGTH + 1
 
 
@@ -573,14 +584,14 @@ def main():
         out_rows = []
         for pos_ref, meta in TARGET_SITES.items():
             lbl = meta["label"]
-            # 先把 X02763 坐标转成当前（旋转）坐标
+            # Convert X02763 coordinates to rotated coordinates
             pos_rot = ref_to_rot(pos_ref)
-            # 注意：df["pos"] 是 int，如果被 read_csv 读成 float/str，要确保类型一致
+            # Ensure pos column type matches
             sub = df[df["pos"] == pos_rot].copy()
             if sub.empty:
                 continue
             
-            # 统一 AF 取值的逻辑不变
+            # Get AF value
             if "AF_primary" in sub.columns:
                 af_col = sub["AF"] if "AF" in sub.columns else pd.Series([None] * len(sub))
                 af_ivar_col = sub["AF_ivar"] if "AF_ivar" in sub.columns else pd.Series([None] * len(sub))

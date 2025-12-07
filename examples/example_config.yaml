@@ -1,0 +1,207 @@
+# ============================================================================
+# HBV Nanopore Pipeline - Example Configuration
+# ============================================================================
+# This is a complete example configuration file.
+# Copy to config/config.yaml and edit paths for your system.
+#
+# Usage:
+#   cp examples/example_config.yaml config/config.yaml
+#   # Edit paths below
+#   ./run_pipeline.sh config/config.yaml --sample SAMPLE_ID
+# ============================================================================
+
+# ----- Project Paths -----
+# Edit these to match your system
+project:
+  # Root working directory for all outputs
+  work_dir: "/path/to/your/hbv_project"
+  
+  # Input FASTQ directory (raw basecalled reads)
+  raw_fastq_dir: "/path/to/raw/fastq"
+  
+  # Results output directory (will be created if doesn't exist)
+  results_dir: "/path/to/your/hbv_project/results"
+
+# ----- Reference Genomes -----
+# Download these before running the pipeline
+reference:
+  # HBV reference panel (all genotypes, primer-start oriented)
+  # Download from: [your repository or reference source]
+  hbv_panel: "/path/to/ref/hbv_panel_all_genotypes.fasta"
+  
+  # Unified HBV reference (rotated, starts at DR1, offset=1823)
+  # This is the main reference used for alignment and variant calling
+  hbv_unified: "/path/to/ref/reordered_1824_3221_reference_A2763.fasta"
+  
+  # Human reference genome (for host decontamination)
+  # Download GRCh38 from: https://www.ncbi.nlm.nih.gov/genome/guide/human/
+  human_ref: "/path/to/ref/GRCh38.primary_assembly.fa.gz"
+  
+  # HBV genome parameters (DO NOT CHANGE unless using different reference)
+  hbv_genome_length: 3221
+  hbv_rotation_offset: 1823
+
+# ----- Database Paths -----
+databases:
+  # Kraken2 database for contamination screening
+  # Download: kraken2-build --standard --db /path/to/kraken2_db
+  # Or use Standard-8 for smaller footprint
+  kraken2_db: "/path/to/kraken2/standard_db"
+  
+  # Clair3 models directory
+  # Download from: https://github.com/HKU-BAL/Clair3/releases
+  clair3_models: "/path/to/clair3_models"
+  
+  # Clair3 model name (match your sequencing chemistry)
+  # R10.4.1 SUP: r1041_e82_400bps_sup_v500
+  # R10.4.1 HAC: r1041_e82_400bps_hac_v500
+  # R9.4.1 SUP:  r941_sup_plant_variant_v100
+  clair3_model_name: "r1041_e82_400bps_sup_v500"
+
+# ----- Conda Environment Names -----
+# These should match your environment names
+# Create with: mamba env create -f environment/env_*.yml
+conda_envs:
+  base: "hbv_base"
+  qc: "hbv_qc"
+  medaka: "hbv_medaka"
+  clair3: "hbv_clair3"
+  variants: "hbv_variants"
+  dorado: "dorado"  # If using conda-installed dorado
+
+# ----- Resource Allocation -----
+# Adjust based on your system
+resources:
+  # Total CPU threads available
+  # Recommendation: Use ~80% of available cores
+  threads: 16
+  
+  # Memory limit (GB) for Java-based tools (FastQC)
+  java_memory_gb: 8
+  
+  # Threads per parallel job
+  # For 16 total threads with 4 parallel jobs: 4 threads/job
+  threads_per_job: 4
+
+# ----- QC Parameters -----
+qc:
+  # Dorado adapter trimming kit
+  # Common kits: SQK-NBD114-24, SQK-LSK114, SQK-RBK114-24
+  dorado_kit: "SQK-NBD114-24"
+  
+  # Length filtering (HBV genome is ~3.2kb)
+  min_read_length: 2000  # Minimum read length to keep
+  max_read_length: 4000  # Maximum read length to keep
+  
+  # Quality filtering
+  # Q17 = ~2% error rate, good balance of quality and yield
+  min_quality: 17
+  
+  # nanoQC minimum length (0 = no filter)
+  nanoqc_min_length: 0
+
+# ----- Host Deconvolution Parameters -----
+host_deconv:
+  # HBV masking parameters
+  hbv_min_mapq: 20       # Minimum MAPQ for HBV alignment
+  hbv_min_match_len: 100 # Minimum alignment match length
+  hbv_merge_distance: 10 # Merge HBV hits within this distance
+  
+  # Human mapping thresholds
+  human_min_mapq: 20          # Minimum MAPQ for human classification
+  human_min_match_len: 100    # Minimum match length
+  human_min_frac: 0.05        # Min fraction of read aligned to human
+  human_min_pid: 0.80         # Minimum percent identity
+  human_min_total_aln: 200    # Minimum total aligned bases
+  human_min_total_frac: 0.05  # Min fraction of read with human hits
+  
+  # Tail trimming parameters
+  tail_near_end: 80           # Consider "near end" if within N bp
+  tail_max_len: 300           # Maximum tail length to trim
+  tail_max_frac: 0.20         # Maximum tail as fraction of read
+  tail_merge_distance: 10     # Merge nearby tail regions
+  min_keep_len: 800           # Minimum remaining length after trim
+  discard_internal: true      # Discard reads with internal host
+
+# ----- Mapping Parameters -----
+mapping:
+  # Minimap2 preset for ONT reads
+  mm2_preset: "map-ont"
+  
+  # Minimum mapping quality for filtering
+  min_mapq: 20
+
+# ----- Coverage Analysis Parameters -----
+coverage:
+  # Sliding window settings
+  window_size: 200    # Window size in bp
+  window_step: 50     # Step size in bp
+  
+  # Low coverage thresholds
+  # Low = < max(low_cov_absolute, median × low_cov_fraction)
+  low_cov_fraction: 0.20  # 20% of median
+  low_cov_absolute: 100   # Absolute minimum
+  
+  # High variance detection (MAD multiplier)
+  # Flag windows where |cov - median| > mad_multiplier × MAD
+  mad_multiplier: 4
+  
+  # Homopolymer masking
+  homopolymer_min_4: 4  # Flag runs ≥4 bp
+  homopolymer_min_6: 6  # High-error runs ≥6 bp
+  homopolymer_pad: 5    # Padding around homopolymers
+
+# ----- Medaka Consensus Parameters -----
+medaka:
+  # Medaka model (must match sequencing chemistry)
+  # See: https://github.com/nanoporetech/medaka#models
+  model: "r1041_e82_400bps_sup_v500"
+  
+  # Minimum depth for consensus calling
+  # Positions with lower depth will be 'N'
+  min_depth: 10
+
+# ----- Variant Calling Parameters -----
+variants:
+  # Filter profile: strict, balanced, lenient
+  # - strict: Maximum specificity (clinical reporting)
+  # - balanced: Good sensitivity/specificity (recommended)
+  # - lenient: Maximum sensitivity (exploratory)
+  filter_profile: "lenient"
+  
+  # iVar parameters
+  ivar:
+    min_quality: 20     # Minimum base quality
+    min_frequency: 0.01 # Minimum allele frequency (1%)
+    min_depth: 10       # Minimum total depth
+  
+  # Clair3 experimental parameters (for viral genomes)
+  clair3:
+    var_pct_full: 1.0             # Process full pileup
+    ref_pct_full: 1.0             # Full reference coverage
+    haploid_sensitive: true       # Haploid-aware mode
+    enable_head_tail_calling: true # Call at sequence ends
+  
+  # Quality tiers
+  tiers:
+    hc_min_af: 0.20  # High Confidence: AF ≥20%
+    mc_min_af: 0.05  # Medium Confidence: AF ≥5%
+    lf_min_af: 0.01  # Low Frequency: AF ≥1%
+  
+  # Blacklist (Panel of Normals) parameters
+  blacklist:
+    min_cohort_freq: 0.3    # Fraction of samples with variant
+    max_af_threshold: 0.05  # Maximum AF for artifacts
+
+# ----- Output Options -----
+output:
+  # Keep intermediate files (BAMs, PAFs, etc.)
+  # Set to false to save disk space
+  keep_intermediate: false
+  
+  # Compress output files (gzip)
+  compress_output: true
+  
+  # Generate coverage plots
+  generate_plots: true
+

@@ -1,0 +1,28 @@
+# HBV Pipeline - Medaka Environment
+# For scripts: 9.1_run_r1_minimap2_and_qc_v2.sh, 9.2_run_medaka_from_bam_v2.sh, 9.3_run_medaka_round2_v2.sh
+#
+# Installation:
+#   mamba env create -f env_medaka.yml
+#   conda activate hbv_medaka
+#
+name: hbv_medaka
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Consensus polishing
+  - medaka>=1.8.0
+  
+  # Alignment
+  - minimap2>=2.24
+  - samtools>=1.15
+  
+  # Python
+  - python>=3.8,<3.11
+  
+  # Utilities
+  - seqkit>=2.3.0
+  - pigz>=2.6
+  - parallel
+

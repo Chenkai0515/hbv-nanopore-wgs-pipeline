@@ -1,0 +1,180 @@
+# ============================================================================
+# HBV Nanopore Pipeline - Configuration File
+# ============================================================================
+# Copy this file to config.yaml and edit paths for your system
+#
+# Usage:
+#   cp config/config.example.yaml config/config.yaml
+#   # Edit config.yaml with your paths
+#   ./run_pipeline.sh config/config.yaml
+# ============================================================================
+
+# ----- Project Paths -----
+project:
+  # Root working directory for all outputs
+  work_dir: "/path/to/your/project"
+  
+  # Input FASTQ directory (raw reads)
+  raw_fastq_dir: "/path/to/raw/fastq"
+  
+  # Results output directory
+  results_dir: "${project.work_dir}/results"
+
+# ----- Reference Genomes -----
+reference:
+  # HBV reference panel (all genotypes, primer-start oriented)
+  hbv_panel: "/path/to/ref/hbv_panel_all_genotypes.fasta"
+  
+  # Unified HBV reference (rotated, offset=1823)
+  hbv_unified: "/path/to/ref/reordered_1824_3221_reference_A2763.fasta"
+  
+  # Human reference genome (for host decontamination)
+  human_ref: "/path/to/ref/GRCh38.primary_assembly.fa.gz"
+  
+  # HBV genome parameters
+  hbv_genome_length: 3221
+  hbv_rotation_offset: 1823
+
+# ----- Database Paths -----
+databases:
+  # Kraken2 database
+  kraken2_db: "/path/to/kraken2/standard_db"
+  
+  # Clair3 models directory
+  clair3_models: "/path/to/clair3_models"
+  
+  # Clair3 model name (for ONT R10.4.1)
+  clair3_model_name: "r1041_e82_400bps_sup_v500"
+
+# ----- Conda Environment Names -----
+conda_envs:
+  base: "hbv_base"
+  qc: "hbv_qc"
+  medaka: "hbv_medaka"
+  clair3: "hbv_clair3"
+  variants: "hbv_variants"
+  dorado: "dorado"  # If using conda-installed dorado
+
+# ----- Resource Allocation -----
+resources:
+  # Total CPU threads available
+  threads: 16
+  
+  # Memory limit (GB) for Java-based tools
+  java_memory_gb: 8
+  
+  # Threads per parallel job
+  threads_per_job: 4
+
+# ----- QC Parameters -----
+qc:
+  # Dorado adapter trimming
+  dorado_kit: "SQK-NBD114-24"
+  
+  # Length filtering
+  min_read_length: 2000
+  max_read_length: 4000
+  
+  # Quality filtering
+  min_quality: 17
+  
+  # nanoQC minimum length
+  nanoqc_min_length: 0
+
+# ----- Host Deconvolution Parameters -----
+host_deconv:
+  # HBV masking
+  hbv_min_mapq: 20
+  hbv_min_match_len: 100
+  hbv_merge_distance: 10
+  
+  # Human mapping thresholds
+  human_min_mapq: 20
+  human_min_match_len: 100
+  human_min_frac: 0.05
+  human_min_pid: 0.80
+  human_min_total_aln: 200
+  human_min_total_frac: 0.05
+  
+  # Tail trimming
+  tail_near_end: 80
+  tail_max_len: 300
+  tail_max_frac: 0.20
+  tail_merge_distance: 10
+  min_keep_len: 800
+  discard_internal: true
+
+# ----- Mapping Parameters -----
+mapping:
+  # Minimap2 preset
+  mm2_preset: "map-ont"
+  
+  # Minimum mapping quality
+  min_mapq: 20
+
+# ----- Coverage Analysis Parameters -----
+coverage:
+  # Sliding window
+  window_size: 200
+  window_step: 50
+  
+  # Low coverage thresholds
+  low_cov_fraction: 0.20
+  low_cov_absolute: 100
+  
+  # High variance detection (MAD multiplier)
+  mad_multiplier: 4
+  
+  # Homopolymer masking
+  homopolymer_min_4: 4
+  homopolymer_min_6: 6
+  homopolymer_pad: 5
+
+# ----- Medaka Consensus Parameters -----
+medaka:
+  # Medaka model (for ONT R10.4.1 SUP)
+  model: "r1041_e82_400bps_sup_v500"
+  
+  # Minimum depth for consensus
+  min_depth: 10
+
+# ----- Variant Calling Parameters -----
+variants:
+  # Filter profile: strict, balanced, lenient
+  filter_profile: "lenient"
+  
+  # iVar parameters
+  ivar:
+    min_quality: 20
+    min_frequency: 0.01
+    min_depth: 10
+  
+  # Clair3 experimental parameters
+  clair3:
+    var_pct_full: 1.0
+    ref_pct_full: 1.0
+    haploid_sensitive: true
+    enable_head_tail_calling: true
+  
+  # Quality tiers
+  tiers:
+    hc_min_af: 0.20      # High Confidence
+    mc_min_af: 0.05      # Medium Confidence
+    lf_min_af: 0.01      # Low Frequency
+  
+  # Blacklist parameters
+  blacklist:
+    min_cohort_freq: 0.3    # Minimum fraction of samples with variant
+    max_af_threshold: 0.05  # Maximum AF to be considered artifact
+
+# ----- Output Options -----
+output:
+  # Keep intermediate files
+  keep_intermediate: false
+  
+  # Compress output files
+  compress_output: true
+  
+  # Generate plots
+  generate_plots: true
+

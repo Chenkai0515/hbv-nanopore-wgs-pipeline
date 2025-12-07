@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+title: HBV Nanopore WGS Pipeline
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Chenkai
+    family-names: Jiang
+    email: cjiang31@jhu.edu
+    affiliation: Johns Hopkins University
+    orcid: ''
+repository-code: 'https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline'
+url: 'https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline'
+abstract: >-
+  A comprehensive bioinformatics pipeline for Hepatitis B
+  Virus (HBV) whole-genome sequencing analysis using Oxford
+  Nanopore long-read data. Features include quality control,
+  host decontamination, consensus sequence generation with
+  Medaka, and variant calling using iVar and Clair3 with
+  tiered confidence assessment.
+keywords:
+  - bioinformatics
+  - HBV
+  - hepatitis B virus
+  - nanopore sequencing
+  - variant calling
+  - consensus sequence
+  - long-read sequencing
+  - ONT
+license: MIT
+version: 1.0.0
+date-released: '2025-12-07'
+preferred-citation:
+  type: software
+  title: HBV Nanopore WGS Pipeline
+  authors:
+    - given-names: Chenkai
+      family-names: Jiang
+  year: 2025
+  url: 'https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline'
+

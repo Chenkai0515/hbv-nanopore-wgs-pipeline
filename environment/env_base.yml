@@ -1,0 +1,36 @@
+# HBV Pipeline - Base Environment
+# Core tools for alignment and sequence manipulation
+#
+# Installation:
+#   mamba env create -f env_base.yml
+#   conda activate hbv_base
+#
+name: hbv_base
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  # Alignment
+  - minimap2>=2.24
+  
+  # BAM/SAM manipulation
+  - samtools>=1.15
+  
+  # Sequence utilities
+  - seqkit>=2.3.0
+  
+  # Compression
+  - pigz>=2.6
+  
+  # Python (for helper scripts)
+  - python>=3.9
+  - biopython>=1.79
+  - pandas>=1.4
+  
+  # File handling
+  - gzip
+  
+  # Process management
+  - parallel
+
