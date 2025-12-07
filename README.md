@@ -13,15 +13,15 @@ A comprehensive bioinformatics pipeline for **Hepatitis B Virus (HBV)** whole-ge
 │                        HBV Nanopore WGS Pipeline                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Raw FASTQ ──► QC & Filtering ──► Host Deconv ──► Mapping ──► Consensus    │
-│                    │                  │              │            │         │
-│               ┌────┴────┐        ┌────┴────┐    ┌───┴───┐   ┌────┴────┐   │
-│               │ Dorado  │        │ Minimap2│    │Medaka │   │ Variant │   │
-│               │ Porechop│        │ SeqKit  │    │ R1+R2 │   │ Calling │   │
-│               │ FastQC  │        │ Masking │    │       │   │iVar+Clair3│ │
-│               └─────────┘        └─────────┘    └───────┘   └─────────┘   │
+│  Raw FASTQ ──► QC & Filtering ──► Host Deconv ──► Mapping ──► Consensus     │
+│                    │                  │             │            │          │
+│               ┌────┴────┐        ┌────┴────┐    ┌───┴───┐   ┌────┴──────┐   │
+│               │ Dorado  │        │ Minimap2│    │Medaka │   │ Variant   │   │
+│               │ Porechop│        │ SeqKit  │    │ R1+R2 │   │ Calling   │   │
+│               │ FastQC  │        │ Masking │    │       │   │iVar+Clair3│   │
+│               └─────────┘        └─────────┘    └───────┘   └───────────┘   │
 │                                                                             │
-│  Output: High-quality consensus sequences + Annotated variant calls        │
+│  Output: High-quality consensus sequences + Annotated variant calls         │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -175,7 +175,7 @@ If you use this pipeline in your research, please cite:
 ```
 Jiang, C. (2025). HBV Nanopore WGS Pipeline: A comprehensive workflow for 
 hepatitis B virus whole-genome sequencing analysis. GitHub repository: 
-https://github.com/YOUR_USERNAME/hbv-nanopore-wgs-pipeline
+https://github.com/Chenkai0515/hbv-nanopore-wgs-pipeline
 ```
 
 See [CITATION.cff](CITATION.cff) for machine-readable citation information.
