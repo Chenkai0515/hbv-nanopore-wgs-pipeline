@@ -6,6 +6,13 @@
 
 A comprehensive bioinformatics pipeline for **Hepatitis B Virus (HBV)** whole-genome sequencing analysis using Oxford Nanopore long-read data.
 
+- **Scope**: From raw ONT FASTQ → QC → host decontamination → mapping → consensus → dual-tool variant calling → unified HBV coordinate system.
+- **Original components**:
+  - Host-tail trimming algorithm & host deconv strategy (scripts/02_host_deconv/*).
+  - Unified HBV coordinate system and coordinate transform utilities (docs/coordinate_systems.md, scripts/03_mapping_consensus/10_*.py, tests/test_coordinate_transform.py).
+  - Integrated dual-caller (iVar + Clair3) variant tiering and cohort blacklist (scripts/04_variants/11.*).
+- **Reproducibility**: Complete mini dataset + config + expected outputs in `examples/`.
+
 ## Overview
 
 ```
